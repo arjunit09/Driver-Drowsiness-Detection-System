@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+
+  <div class="row align-items-center mb-5">
+
+    <div class="col-lg-6">
+
+      <h1 class="fw-bold display-5">
+        Driver Drowsiness Detection System
+      </h1>
+
+      <!-- Buttons -->
+      <div class="mt-4">
+
+        <button id="startBtn" class="btn btn-success btn-lg me-3">
+          Start Detection
+        </button>
+
+        <button id="stopBtn" class="btn btn-danger btn-lg">
+          Stop
+        </button>
+
+       
+
+
+      </div>
+
+      <!-- Runtime -->
+      <div class="mt-4">
+        <h5>
+          Runtime :
+          <span id="timer" class="badge bg-primary fs-6">
+            00:00:00
+          </span>
+        </h5>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+let seconds = 0
+let timerInterval = null
+
+function updateTimer(){
+
+  seconds++
+
+  let hrs = String(Math.floor(seconds / 3600)).padStart(2,'0')
+  let mins = String(Math.floor((seconds % 3600) / 60)).padStart(2,'0')
+  let secs = String(seconds % 60).padStart(2,'0')
+
+  document.getElementById("timer").innerText =
+  `${hrs}:${mins}:${secs}`
+}
+
+
+// START BUTTON
+document.getElementById("startBtn").addEventListener("click", async function(){
+
+  await fetch("/start_detection")
+
+  if(timerInterval === null){
+    timerInterval = setInterval(updateTimer,1000)
+  }
+
+})
+
+
+// STOP BUTTON
+document.getElementById("stopBtn").addEventListener("click", async function(){
+
+  await fetch("/stop_detection")
+
+  if(timerInterval !== null){
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+
+  seconds = 0
+  document.getElementById("timer").innerText = "00:00:00"
+
+})
+
+</script>
+
+{% endblock %}

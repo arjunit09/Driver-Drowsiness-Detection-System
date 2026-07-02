@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card shadow-sm border-0 mx-auto" style="max-width: 700px;">
+  <div class="card-header bg-dark text-white text-center fs-5">
+    Contact the Team
+  </div>
+  <div class="card-body p-4">
+    <p class="lead text-center mb-4">
+      Have questions, feedback, or collaboration ideas?  
+      Get in touch with the batch07 below.
+    </p>
+
+    <!-- Contact Info -->
+    <div class="text-center mb-4">
+      <p class="fs-5 mb-1"><strong>BATCH_07</strong></p>
+      <p class="text-muted">MINI PROJECT</p>
+      <p>📧 <a href="mailto:batch07@example.com" class="text-decoration-none">batch07@example.com</a></p>
+      <p>🔗 <a href="https://github.com/XZY" target="_blank" class="text-decoration-none">GitHub Profile</a></p>
+    </div>
+
+    <!-- Optional Contact Form -->
+    <form action="#" method="post" class="p-3 rounded bg-light shadow-sm">
+      <div class="mb-3">
+        <label for="name" class="form-label fw-semibold">Your Name</label>
+        <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name" required>
+      </div>
+      <div class="mb-3">
+        <label for="email" class="form-label fw-semibold">Your Email</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+      </div>
+      <div class="mb-3">
+        <label for="message" class="form-label fw-semibold">Your Message</label>
+        <textarea class="form-control" id="message" name="message" rows="4" placeholder="Write your message..." required></textarea>
+      </div>
+      <div class="text-center">
+        <button type="submit" class="btn btn-dark px-4">Send Message</button>
+      </div>
+    </form>
+
+    <p class="text-center mt-3 text-muted small">*This is a demo form. Backend email sending is not enabled in this project.</p>
+  </div>
+</div>
+
+{% endblock %}

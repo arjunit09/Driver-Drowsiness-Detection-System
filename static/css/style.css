@@ -1,0 +1,112 @@
+/* 🌈 Gradient Navbar */
+.navbar {
+    background: linear-gradient(90deg, #0d47a1, #1976d2, #42a5f5);
+    background-size: 300% 300%;
+    animation: gradientShift 8s ease infinite;
+}
+
+/* Smooth Gradient Animation */
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Navbar Brand Styling */
+.navbar-brand span {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #fff;
+}
+
+/* Nav Links Styling */
+.navbar .nav-link {
+    color: #e0e0e0;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Active Page Highlight */
+.navbar .nav-link.active {
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Underline Hover Animation */
+.navbar .nav-link::after {
+    content: "";
+    position: absolute;
+    width: 0%;
+    height: 2px;
+    left: 0;
+    bottom: -2px;
+    background-color: #ffc107;
+    transition: 0.3s;
+}
+.navbar .nav-link:hover::after {
+    width: 100%;
+}
+.navbar .nav-link:hover {
+    color: #fff;
+}
+
+/* Navbar Button Hover Effects */
+.btn-outline-light:hover {
+    background-color: #ffc107;
+    color: #000 !important;
+    border: none;
+}
+
+.btn-warning:hover {
+    background-color: #ffca28;
+    color: #000;
+}
+
+/* ===== Gradient Background for Login Page ===== */
+body {
+    background: linear-gradient(135deg, #0d47a1, #1976d2, #42a5f5);
+    background-size: 300% 300%;
+    animation: gradientMove 8s ease infinite;
+    min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Smooth gradient animation */
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Login Card Enhancements */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Input Styling */
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.5);
+}
+
+/* Make login text more readable */
+label, p, h4 {
+    color: #f1f1f1;
+}
+
+/* Subtle glowing button effect */
+.btn-warning {
+    background: linear-gradient(90deg, #ffb300, #ffc107, #ffd54f);
+    border: none;
+}
+.btn-warning:hover {
+    background: linear-gradient(90deg, #ffc107, #ffb300);
+    transform: scale(1.03);
+    transition: all 0.2s ease-in-out;
+}
+p{
+    color:black
+}

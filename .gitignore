@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+
+venv/
+flask_session/
+
+shape_predictor_68_face_landmarks.dat
+
+alert_log.txt
+
+.env
