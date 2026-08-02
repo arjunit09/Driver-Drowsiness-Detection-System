@@ -205,11 +205,11 @@ def start():
     # Thresholds
     # ==============================
 
-    EYE_AR_THRESH = 0.25
-    EYE_AR_CONSEC_FRAMES = 20
+    EYE_AR_THRESH = 0.27
+    EYE_AR_CONSEC_FRAMES = 12
 
     MAR_THRESH = 0.15
-    YAWN_CONSEC_FRAMES = 15
+    YAWN_CONSEC_FRAMES = 12
 
     COUNTER = 0
     YAWN_COUNTER = 0
