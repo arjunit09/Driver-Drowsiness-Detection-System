@@ -63,6 +63,7 @@ def init_db():
 
 
 def get_user_by_username(username):
+    init_db()
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -73,6 +74,7 @@ def get_user_by_username(username):
 
 
 def create_user(username, email, password):
+    init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     password_hash = generate_password_hash(password)
@@ -88,6 +90,15 @@ def create_user(username, email, password):
     finally:
         conn.close()
     return success
+
+# Initialize DB and Log File on module load (Gunicorn + Flask WSGI)
+init_db()
+if not os.path.exists(LOG_PATH):
+    try:
+        with open(LOG_PATH, "w", encoding="utf-8") as f:
+            f.write("")
+    except Exception:
+        pass
 
 # =======================================
 # Utility: Read Alert Log
