@@ -245,25 +245,7 @@ startBtn.addEventListener("click", function() {
   startBtn.disabled = true;
   startBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Launching...`;
 
-  // 1. Immediately request browser camera permission on user click gesture
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
-      .then(function(stream) {
-        clientWebcamStream = stream;
-        webcamVideo.srcObject = stream;
-        webcamVideo.style.display = "block";
-        videoFeed.style.display = "none";
-        renderAIOverlay();
-      })
-      .catch(function(err) {
-        console.log("Webcam permission denied or unavailable:", err);
-        webcamVideo.style.display = "none";
-        aiCanvas.style.display = "none";
-        videoFeed.style.display = "block";
-      });
-  }
-
-  // 2. Launch backend AI monitoring engine
+  // Launch backend AI monitoring engine
   fetch("/start_detection")
     .then(res => res.json())
     .then(data => {
@@ -279,6 +261,9 @@ startBtn.addEventListener("click", function() {
       statusBadge.innerHTML = `<span class="pulse-indicator pulse-green"></span> Active`;
 
       videoContainer.style.display = "block";
+      videoFeed.style.display = "block";
+      webcamVideo.style.display = "none";
+      if (aiCanvas) aiCanvas.style.display = "none";
       videoFeed.src = "{{ url_for('video_feed') }}?t=" + new Date().getTime();
     })
     .catch(err => {
