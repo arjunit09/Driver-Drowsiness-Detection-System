@@ -1,6 +1,6 @@
 # 🚗 Smart Driver Drowsiness Detection System
 
-A real-time AI-powered Driver Drowsiness & Yawn Detection System developed using **Python, OpenCV, dlib, Flask, Chart.js, SQLite, and Pygame**. The system continuously monitors a driver's face via webcam feed, calculates real-time Eye Aspect Ratio ($\text{EAR} < 0.25$) and Mouth Aspect Ratio ($\text{MAR} > 0.15$), issues dual audio alarm sirens, and logs incidents to an interactive analytics dashboard.
+A real-time AI-powered Driver Drowsiness & Yawn Detection System developed using **Python, OpenCV, dlib, Flask, Chart.js, SQLite, and Pygame**. The system continuously monitors a driver's face via webcam feed, calculates real-time Eye Aspect Ratio ($\text{EAR} < 0.27$) and Mouth Aspect Ratio ($\text{MAR} > 0.15$), issues dual audio alarm sirens, and logs incidents to an interactive analytics dashboard.
 
 ---
 
@@ -8,9 +8,9 @@ A real-time AI-powered Driver Drowsiness & Yawn Detection System developed using
 
 - 🔒 **Dynamic SQLite Authentication**: Secure registration & login system with Werkzeug password hashing.
 - 👁️ **68-Point Real-Time Facial Landmark Tracking**: Precise sub-second eye closure detection using `dlib`.
-- 😴 **Automated Drowsiness & Microsleep Alarm**: Triggers a multi-channel emergency alarm siren when eyes remain closed.
+- 😴 **Automated Drowsiness & Microsleep Alarm**: Triggers an emergency alarm siren when eyes remain closed.
 - 🥱 **Yawn & Fatigue Monitoring**: Detects sustained yawning aperture ($\text{MAR} > 0.15$).
-- 📊 **Interactive Chart.js Analytics Dashboard**: Real-time distribution bar & doughnut frequency charts, 4 stat cards, and safety rating scores %.
+- 📊 **Interactive Chart.js Analytics Dashboard**: Real-time distribution bar & doughnut frequency charts, 4 stat cards, and safety rating scores.
 - 🎥 **Live Web Stream & HUD Console**: Embedded in-browser video stream alongside desktop OpenCV window.
 - 📜 **Audit Ledger & Live Incident Feed**: Real-time event logging with single-click log history clearing.
 - ⚡ **DirectShow Camera Backend**: Optimized Windows webcam stream buffer (`cv2.CAP_DSHOW`).
