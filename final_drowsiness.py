@@ -439,7 +439,7 @@ def start():
     with frame_lock:
         output_frame = None
 
-    time.sleep(0.5)
+    time.sleep(0.05)
     try:
         cv2.destroyAllWindows()
     except Exception:

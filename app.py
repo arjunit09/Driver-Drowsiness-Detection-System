@@ -409,34 +409,20 @@ def video_feed():
 
 @app.route("/start_detection")
 def start_detection():
-
     global detection_thread
 
-    if detection_thread is not None and detection_thread.is_alive():
-        return redirect(url_for("index"))
-
     if not control.detection_running:
-
         control.detection_running = True
-
-        detection_thread = Thread(target=start)
-        detection_thread.daemon = True
+        detection_thread = Thread(target=start, daemon=True)
         detection_thread.start()
 
-    return redirect(url_for("index"))
+    return jsonify({"status": "started", "running": True})
 
-
-# =======================================
-# Stop Detection
-# =======================================
 
 @app.route("/stop_detection")
 def stop_detection():
-
     control.detection_running = False
-    time.sleep(0.2)
-
-    return redirect(url_for("index"))
+    return jsonify({"status": "stopped", "running": False})
 
 
 # =======================================
