@@ -306,10 +306,6 @@ def start():
                 update_alert("NORMAL")
 
         for rect in rects:
-
-            (x1, y1, x2, y2) = (rect.left(), rect.top(), rect.right(), rect.bottom())
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 2)
-
             shape = predictor(gray, rect)
             shape = face_utils.shape_to_np(shape)
 
@@ -318,13 +314,13 @@ def start():
             ear_text = f"{ear:.3f}"
             mar_text = f"{mar:.2f}"
 
-            # Draw eyes
-            cv2.drawContours(frame, [cv2.convexHull(leftEye)], -1, (0,255,0), 1)
-            cv2.drawContours(frame, [cv2.convexHull(rightEye)], -1, (0,255,0), 1)
+            # Draw eye contours (green)
+            cv2.drawContours(frame, [cv2.convexHull(leftEye)], -1, (0, 255, 0), 1)
+            cv2.drawContours(frame, [cv2.convexHull(rightEye)], -1, (0, 255, 0), 1)
 
-            # Draw mouth
+            # Draw mouth contour (green)
             mouth = shape[48:68]
-            cv2.drawContours(frame, [cv2.convexHull(mouth)], -1, (255,0,0), 1)
+            cv2.drawContours(frame, [cv2.convexHull(mouth)], -1, (0, 255, 0), 1)
 
             # ==============================
             # Drowsiness Detection
@@ -415,28 +411,25 @@ def start():
         if alert_start_time is not None and alert_message != "":
             alert_time = time.time() - alert_start_time
             cv2.putText(frame, alert_message,
-                        (150, 80),
+                        (10, 75),
                         cv2.FONT_HERSHEY_DUPLEX,
-                        1.2,
-                        (0,0,255),
+                        1.1,
+                        (0, 0, 255),
                         3)
 
             cv2.putText(frame, f"Alert Time: {alert_time:.1f}s",
-                        (170,120),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.7,
-                        (0,0,255),
+                        (10, 115),
+                        cv2.FONT_HERSHEY_DUPLEX,
+                        0.9,
+                        (0, 0, 255),
                         2)
 
-        # HUD overlay (always visible)
-        cv2.putText(frame,"SMART DRIVER MONITOR",(200,30),
-                    cv2.FONT_HERSHEY_DUPLEX,0.7,(255,255,255),2)
+        # Telemetry HUD
+        cv2.putText(frame, f"EAR: {ear_text}", (10, 35),
+                    cv2.FONT_HERSHEY_DUPLEX, 1.0, (0, 255, 0), 3)
 
-        cv2.putText(frame,f"EAR: {ear_text}",(10,30),
-                    cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0),2)
-
-        cv2.putText(frame,f"MAR: {mar_text}",(480,30),
-                    cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,0,255),2)
+        cv2.putText(frame, f"MAR: {mar_text}", (450, 35),
+                    cv2.FONT_HERSHEY_DUPLEX, 1.0, (0, 0, 255), 3)
 
         with frame_lock:
             output_frame = frame.copy()
