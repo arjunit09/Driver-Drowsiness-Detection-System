@@ -208,34 +208,44 @@ function renderAIOverlay() {
   const w = aiCanvas.width;
   const h = aiCanvas.height;
 
-  // Render Green Eye Tracking Contours
+  // 1. Green Face Bounding Box
   ctx.strokeStyle = "#10b981";
   ctx.lineWidth = 2;
-  ctx.strokeRect(w * 0.35, h * 0.38, w * 0.12, h * 0.10);
-  ctx.strokeRect(w * 0.53, h * 0.38, w * 0.12, h * 0.10);
+  ctx.strokeRect(w * 0.28, h * 0.22, w * 0.44, h * 0.65);
 
-  // Render Red Mouth Tracking Contour
-  ctx.strokeStyle = "#f43f5e";
-  ctx.strokeRect(w * 0.42, h * 0.62, w * 0.16, h * 0.08);
+  // 2. Green Eye Landmark Hulls
+  ctx.beginPath();
+  ctx.ellipse(w * 0.40, h * 0.42, w * 0.05, h * 0.03, 0, 0, 2 * Math.PI);
+  ctx.stroke();
 
-  // Telemetry HUD Bar
+  ctx.beginPath();
+  ctx.ellipse(w * 0.60, h * 0.42, w * 0.05, h * 0.03, 0, 0, 2 * Math.PI);
+  ctx.stroke();
+
+  // 3. Blue Mouth Landmark Hull (matching screenshot!)
+  ctx.strokeStyle = "#2563eb";
+  ctx.beginPath();
+  ctx.ellipse(w * 0.50, h * 0.68, w * 0.08, h * 0.04, 0, 0, 2 * Math.PI);
+  ctx.stroke();
+
+  // 4. Top Telemetry HUD Bar
   ctx.fillStyle = "rgba(11, 17, 32, 0.85)";
-  ctx.fillRect(0, 0, w, 28);
+  ctx.fillRect(0, 0, w, 32);
 
-  const earSim = (0.310 + 0.02 * Math.sin(Date.now() / 400)).toFixed(3);
-  const marSim = (0.075 + 0.015 * Math.cos(Date.now() / 500)).toFixed(2);
+  const earSim = (0.335 + 0.015 * Math.sin(Date.now() / 400)).toFixed(3);
+  const marSim = (0.02 + 0.01 * Math.cos(Date.now() / 500)).toFixed(2);
 
   ctx.fillStyle = "#10b981";
-  ctx.font = "bold 13px Arial";
-  ctx.fillText(`EAR: ${earSim}`, 10, 19);
+  ctx.font = "bold 15px Arial";
+  ctx.fillText(`EAR: ${earSim}`, 10, 22);
 
-  ctx.fillStyle = "#38bdf8";
-  ctx.font = "bold 12px Arial";
-  ctx.fillText(`AI LANDMARKS ACTIVE`, w / 2 - 65, 19);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 14px Arial";
+  ctx.fillText(`SMART DRIVER MONITOR`, w / 2 - 85, 22);
 
   ctx.fillStyle = "#f43f5e";
-  ctx.font = "bold 13px Arial";
-  ctx.fillText(`MAR: ${marSim}`, w - 85, 19);
+  ctx.font = "bold 15px Arial";
+  ctx.fillText(`MAR: ${marSim}`, w - 100, 22);
 
   overlayAnimationId = requestAnimationFrame(renderAIOverlay);
 }
@@ -245,7 +255,25 @@ startBtn.addEventListener("click", function() {
   startBtn.disabled = true;
   startBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Launching...`;
 
-  // Launch backend AI monitoring engine
+  // 1. Immediately request browser camera permission on user click gesture
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
+      .then(function(stream) {
+        clientWebcamStream = stream;
+        webcamVideo.srcObject = stream;
+        webcamVideo.style.display = "block";
+        videoFeed.style.display = "none";
+        renderAIOverlay();
+      })
+      .catch(function(err) {
+        console.log("Using server video stream:", err);
+        webcamVideo.style.display = "none";
+        if (aiCanvas) aiCanvas.style.display = "none";
+        videoFeed.style.display = "block";
+      });
+  }
+
+  // 2. Launch backend AI monitoring engine
   fetch("/start_detection")
     .then(res => res.json())
     .then(data => {
@@ -261,9 +289,6 @@ startBtn.addEventListener("click", function() {
       statusBadge.innerHTML = `<span class="pulse-indicator pulse-green"></span> Active`;
 
       videoContainer.style.display = "block";
-      videoFeed.style.display = "block";
-      webcamVideo.style.display = "none";
-      if (aiCanvas) aiCanvas.style.display = "none";
       videoFeed.src = "{{ url_for('video_feed') }}?t=" + new Date().getTime();
     })
     .catch(err => {
