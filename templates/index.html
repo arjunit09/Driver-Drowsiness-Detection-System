@@ -79,6 +79,7 @@
     </div>
     <div class="d-inline-block position-relative rounded overflow-hidden shadow border border-2 border-primary" style="max-width: 520px; width: 100%;">
       <img id="videoFeed" src="" class="img-fluid" style="width: 100%; max-height: 320px; object-fit: contain; display: block; background: #0b1120;" alt="Live AI Camera Feed">
+      <video id="webcamVideo" autoplay playsinline style="width: 100%; max-height: 320px; object-fit: contain; display: none; background: #0b1120; border-radius: 4px;"></video>
     </div>
     <p class="text-muted small mt-2 mb-0"><i class="bi bi-shield-check text-success me-1"></i> AI Computer Vision Video Stream Active</p>
   </div>
@@ -189,6 +190,8 @@ const stopBtn = document.getElementById("stopBtn");
 const statusBadge = document.getElementById("statusBadge");
 const videoContainer = document.getElementById("videoContainer");
 const videoFeed = document.getElementById("videoFeed");
+const webcamVideo = document.getElementById("webcamVideo");
+let clientWebcamStream = null;
 
 // START BUTTON
 startBtn.addEventListener("click", async function() {
@@ -209,9 +212,25 @@ startBtn.addEventListener("click", async function() {
     statusBadge.className = "badge bg-success-subtle text-success border border-success px-3 py-1";
     statusBadge.innerHTML = `<span class="pulse-indicator pulse-green"></span> Active`;
 
-    // Show live video feed in web browser
+    // Show live video feed container
     videoContainer.style.display = "block";
     videoFeed.src = "{{ url_for('video_feed') }}?t=" + new Date().getTime();
+
+    // HTML5 Client Camera Stream Fallback for Cloud Hosting
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
+        .then(function(stream) {
+          clientWebcamStream = stream;
+          webcamVideo.srcObject = stream;
+          webcamVideo.style.display = "block";
+          videoFeed.style.display = "none";
+        })
+        .catch(function(err) {
+          console.log("Using server video stream:", err);
+          webcamVideo.style.display = "none";
+          videoFeed.style.display = "block";
+        });
+    }
 
   } catch(err) {
     console.error("Error starting detection:", err);
@@ -244,7 +263,14 @@ stopBtn.addEventListener("click", async function() {
     statusBadge.className = "badge bg-secondary-subtle text-secondary border border-secondary px-3 py-1";
     statusBadge.innerHTML = `<span class="pulse-indicator pulse-red"></span> Idle`;
 
-    // Hide video feed
+    // Stop client camera stream
+    if (clientWebcamStream) {
+      clientWebcamStream.getTracks().forEach(track => track.stop());
+      clientWebcamStream = null;
+    }
+
+    webcamVideo.style.display = "none";
+    videoFeed.style.display = "block";
     videoFeed.src = "";
     videoContainer.style.display = "none";
 
