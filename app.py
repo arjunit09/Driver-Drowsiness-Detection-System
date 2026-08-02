@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from flask_session import Session
 import pandas as pd
 import matplotlib
@@ -7,10 +7,17 @@ import matplotlib.pyplot as plt
 import os
 import io
 import base64
+import re
+import sqlite3
 from datetime import datetime
-from final_drowsiness import start, cv2
+from werkzeug.security import generate_password_hash, check_password_hash
+from final_drowsiness import start, generate_frames, cv2
 from threading import Thread
 import control,time
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_PATH = os.path.join(CURRENT_DIR, "alert_log.txt")
+DB_PATH = os.path.join(CURRENT_DIR, "users.db")
 
 # =======================================
 # Flask App Config
@@ -26,47 +33,100 @@ Session(app)
 detection_thread = None
 
 # =======================================
-# Fake User Data
+# SQLite Database Management
 # =======================================
 
-USERS = {
-    "admin": "password123"
-}
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT,
+            password TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+
+    # Seed default admin user if empty
+    cursor.execute('SELECT COUNT(*) FROM users')
+    if cursor.fetchone()[0] == 0:
+        default_hash = generate_password_hash("password123")
+        cursor.execute(
+            'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+            ("admin", "admin@example.com", default_hash)
+        )
+        conn.commit()
+    conn.close()
+
+
+def get_user_by_username(username):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
+
+def create_user(username, email, password):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    password_hash = generate_password_hash(password)
+    try:
+        cursor.execute(
+            'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+            (username, email, password_hash)
+        )
+        conn.commit()
+        success = True
+    except sqlite3.IntegrityError:
+        success = False
+    finally:
+        conn.close()
+    return success
 
 # =======================================
 # Utility: Read Alert Log
 # =======================================
 
-def read_alert_log():
+def read_alert_log(all_events=False):
 
-    path = "alert_log.txt"
-
-    if not os.path.exists(path):
+    if not os.path.exists(LOG_PATH):
         return pd.DataFrame(columns=["time", "type"])
 
     logs = []
 
-    with open(path, "r") as f:
-        for line in f:
+    try:
+        with open(LOG_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                line_str = line.strip()
+                if not line_str:
+                    continue
 
-            if "DROWSINESS" in line:
-                alert_type = "Drowsiness"
+                if "DROWSINESS DETECTED" in line_str:
+                    alert_type = "Drowsiness"
+                elif "YAWN DETECTED" in line_str:
+                    alert_type = "Yawn"
+                elif all_events and "SYSTEM STARTED" in line_str:
+                    alert_type = "System Started"
+                elif all_events and "SYSTEM STOPPED" in line_str:
+                    alert_type = "System Stopped"
+                else:
+                    continue
 
-            elif "YAWN" in line:
-                alert_type = "Yawn"
+                match = re.search(r'\[(.*?)\]', line_str)
+                timestamp = match.group(1) if match else ""
 
-            else:
-                continue
-
-            try:
-                timestamp = line.strip().split("]")[0].replace("[", "")
-            except:
-                timestamp = ""
-
-            logs.append({
-                "time": timestamp,
-                "type": alert_type
-            })
+                logs.append({
+                    "time": timestamp,
+                    "type": alert_type
+                })
+    except Exception as e:
+        print(f"Log reading exception handled safely: {e}")
 
     return pd.DataFrame(logs)
 
@@ -106,31 +166,91 @@ def generate_chart():
 
 
 # =======================================
+# Authentication Middleware (Enforce Login on All URLs)
+# =======================================
+
+EXEMPT_ENDPOINTS = {"home", "login", "register", "static"}
+
+@app.before_request
+def require_login():
+    endpoint = request.endpoint
+
+    if not endpoint or endpoint == "static" or endpoint.startswith("static."):
+        return
+
+    if endpoint in EXEMPT_ENDPOINTS:
+        return
+
+    if "user" not in session:
+        if request.path.startswith("/dashboard_data") or request.path.startswith("/clear_logs"):
+            return jsonify({"error": "unauthorized"}), 401
+
+        flash("Please log in first to access the system.", "warning")
+        return redirect(url_for("home"))
+
+
+# =======================================
 # Routes
 # =======================================
 
 @app.route("/")
 def home():
+    if "user" in session:
+        return redirect(url_for("index"))
     return render_template("login.html")
 
 
 @app.route("/login", methods=["POST"])
 def login():
 
-    username = request.form.get("username")
-    password = request.form.get("password")
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
 
-    if username in USERS and USERS[username] == password:
+    user = get_user_by_username(username)
 
-        session["user"] = username
-        flash("Login successful!", "success")
+    if user and check_password_hash(user["password"], password):
 
-        return redirect(url_for("dashboard"))
+        session["user"] = user["username"]
+        flash(f"Login successful! Welcome back, {user['username']}.", "success")
+
+        return redirect(url_for("index"))
 
     else:
 
         flash("Invalid username or password.", "danger")
         return redirect(url_for("home"))
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+
+    if request.method == "POST":
+
+        username = request.form.get("username", "").strip()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not username or not password:
+            flash("Username and password are required.", "warning")
+            return render_template("register.html")
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "warning")
+            return render_template("register.html")
+
+        if get_user_by_username(username):
+            flash("Username already taken. Please choose another.", "danger")
+            return render_template("register.html")
+
+        if create_user(username, email, password):
+            flash("Account registered successfully! Please log in with your credentials.", "success")
+            return redirect(url_for("home"))
+        else:
+            flash("Registration failed. Please try again.", "danger")
+            return render_template("register.html")
+
+    return render_template("register.html")
 
 
 @app.route("/logout")
@@ -151,18 +271,23 @@ def dashboard():
 
     df = read_alert_log()
 
-    total_drowsy = df[df["type"] == "Drowsiness"].shape[0]
-    total_yawn = df[df["type"] == "Yawn"].shape[0]
+    total_drowsy = df[df["type"] == "Drowsiness"].shape[0] if not df.empty else 0
+    total_yawn = df[df["type"] == "Yawn"].shape[0] if not df.empty else 0
+    total_incidents = total_drowsy + total_yawn
+    safety_score = max(0, 100 - (total_drowsy * 8 + total_yawn * 4))
 
-    chart = generate_chart()
+    latest_logs = df.tail(15).to_dict(orient="records") if not df.empty else []
+    latest_logs.reverse()
 
     return render_template(
         "dashboard.html",
         username=session["user"],
         total_drowsy=total_drowsy,
         total_yawn=total_yawn,
-        chart=chart,
-        logs=df.to_dict(orient="records")
+        total_incidents=total_incidents,
+        safety_score=safety_score,
+        detection_running=control.detection_running,
+        logs=latest_logs
     )
 
 
@@ -171,8 +296,12 @@ def about():
     return render_template("about.html")
 
 
-@app.route("/contact")
+@app.route("/contact", methods=["GET", "POST"])
 def contact():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        flash(f"Thank you, {name if name else 'Driver'}! Your message has been sent successfully to the team.", "success")
+        return redirect(url_for("contact"))
     return render_template("contact.html")
 
 
@@ -188,19 +317,38 @@ def dashboard_data():
 
     df = read_alert_log()
 
-    total_drowsy = df[df["type"] == "Drowsiness"].shape[0]
-    total_yawn = df[df["type"] == "Yawn"].shape[0]
+    df_stats = read_alert_log(all_events=False)
+    df_all = read_alert_log(all_events=True)
 
-    chart = generate_chart()
+    total_drowsy = df_stats[df_stats["type"] == "Drowsiness"].shape[0] if not df_stats.empty else 0
+    total_yawn = df_stats[df_stats["type"] == "Yawn"].shape[0] if not df_stats.empty else 0
+    total_incidents = total_drowsy + total_yawn
+    safety_score = max(0, 100 - (total_drowsy * 8 + total_yawn * 4))
 
-    latest_logs = df.tail(10).to_dict(orient="records")
+    latest_logs = df_all.tail(20).to_dict(orient="records") if not df_all.empty else []
+    latest_logs.reverse()
 
     return jsonify({
         "total_drowsy": total_drowsy,
         "total_yawn": total_yawn,
-        "chart": chart,
+        "total_incidents": total_incidents,
+        "safety_score": safety_score,
+        "detection_running": control.detection_running,
         "logs": latest_logs
     })
+
+
+@app.route("/clear_logs", methods=["POST"])
+def clear_logs():
+
+    if "user" not in session:
+        return jsonify({"error": "unauthorized"}), 401
+
+    if os.path.exists(LOG_PATH):
+        with open(LOG_PATH, "w") as f:
+            f.write("")
+
+    return jsonify({"success": True})
 
 
 # =======================================
@@ -218,6 +366,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/video_feed")
+def video_feed():
+    return Response(generate_frames(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+
 # =======================================
 # Start Detection
 # =======================================
@@ -226,6 +379,9 @@ def index():
 def start_detection():
 
     global detection_thread
+
+    if detection_thread is not None and detection_thread.is_alive():
+        return redirect(url_for("index"))
 
     if not control.detection_running:
 
@@ -257,7 +413,9 @@ def stop_detection():
 
 if __name__ == "__main__":
 
-    if not os.path.exists("alert_log.txt"):
-        open("alert_log.txt","w").close()
+    init_db()
+
+    if not os.path.exists(LOG_PATH):
+        open(LOG_PATH,"w").close()
 
     app.run(debug=False, use_reloader=False)

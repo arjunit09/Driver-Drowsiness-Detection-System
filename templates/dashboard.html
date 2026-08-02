@@ -1,66 +1,266 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="text-center mb-4">Welcome, {{ username }}</h2>
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<p id="last_updated" class="text-muted text-end">Last updated: just now</p>
+<div class="container py-2">
+  <!-- Header Section -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">
+        <i class="bi bi-speedometer2 text-primary me-2"></i>Driver Safety Dashboard
+      </h2>
+      <p class="text-muted mb-0 small">Real-time driver fatigue metrics and event analytics</p>
+    </div>
+    
+    <div class="d-flex align-items-center mt-3 mt-md-0">
+      <div id="status_container">
+        {% if detection_running %}
+        <span class="badge rounded-pill bg-success-subtle text-success border border-success px-3 py-2 me-3 fs-6">
+          <span class="pulse-indicator pulse-green"></span> Monitoring Active
+        </span>
+        {% else %}
+        <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary px-3 py-2 me-3 fs-6">
+          <span class="pulse-indicator pulse-red"></span> Detection Idle
+        </span>
+        {% endif %}
+      </div>
+      <span id="last_updated" class="text-muted small">Updated: just now</span>
+    </div>
+  </div>
 
-<div class="row g-4">
-  <!-- Drowsiness Card -->
-  <div class="col-md-6">
-    <div class="card text-center shadow-sm border-0">
-      <div class="card-body">
-        <h5 class="card-title text-danger">Drowsiness Alerts</h5>
-        <h2 id="drowsy_count" class="fw-bold text-danger">{{ total_drowsy }}</h2>
+  <!-- 4 Stat Cards Row -->
+  <div class="row g-3 mb-4">
+    <!-- Drowsiness Card -->
+    <div class="col-md-6 col-lg-3">
+      <div class="dash-card p-3 h-100">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <p class="text-muted fw-semibold small text-uppercase mb-1">Drowsiness Alerts</p>
+            <h2 id="drowsy_count" class="fw-bold text-danger mb-0">{{ total_drowsy }}</h2>
+          </div>
+          <div class="stat-icon bg-danger-subtle text-danger">
+            <i class="bi bi-eye-slash-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Yawn Card -->
+    <div class="col-md-6 col-lg-3">
+      <div class="dash-card p-3 h-100">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <p class="text-muted fw-semibold small text-uppercase mb-1">Yawn Alerts</p>
+            <h2 id="yawn_count" class="fw-bold text-warning mb-0">{{ total_yawn }}</h2>
+          </div>
+          <div class="stat-icon bg-warning-subtle text-warning">
+            <i class="bi bi-emoji-frown-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Incidents Card -->
+    <div class="col-md-6 col-lg-3">
+      <div class="dash-card p-3 h-100">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <p class="text-muted fw-semibold small text-uppercase mb-1">Total Incidents</p>
+            <h2 id="incidents_count" class="fw-bold text-primary mb-0">{{ total_incidents }}</h2>
+          </div>
+          <div class="stat-icon bg-primary-subtle text-primary">
+            <i class="bi bi-activity"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Safety Score Card -->
+    <div class="col-md-6 col-lg-3">
+      <div class="dash-card p-3 h-100">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <p class="text-muted fw-semibold small text-uppercase mb-1">Safety Rating</p>
+            <h2 id="safety_score" class="fw-bold text-success mb-0">{{ safety_score }}%</h2>
+          </div>
+          <div class="stat-icon bg-success-subtle text-success">
+            <i class="bi bi-shield-check"></i>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Yawn Card -->
-  <div class="col-md-6">
-    <div class="card text-center shadow-sm border-0">
-      <div class="card-body">
-        <h5 class="card-title text-warning">Yawn Alerts</h5>
-        <h2 id="yawn_count" class="fw-bold text-warning">{{ total_yawn }}</h2>
+  <!-- Interactive Charts Section -->
+  <div class="row g-4 mb-4">
+    <!-- Chart 1: Alert Ratio (Bar Chart) -->
+    <div class="col-lg-7">
+      <div class="dash-card p-4 h-100">
+        <h5 class="fw-bold mb-3 text-dark d-flex align-items-center">
+          <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Alert Distribution Frequency
+        </h5>
+        <div style="position: relative; height: 260px;">
+          <canvas id="barChart"></canvas>
+        </div>
       </div>
+    </div>
+
+    <!-- Chart 2: Proportion Breakdown (Doughnut Chart) -->
+    <div class="col-lg-5">
+      <div class="dash-card p-4 h-100">
+        <h5 class="fw-bold mb-3 text-dark d-flex align-items-center">
+          <i class="bi bi-pie-chart-fill text-primary me-2"></i>Fatigue Category Share
+        </h5>
+        <div style="position: relative; height: 260px;">
+          <canvas id="pieChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Alerts Table -->
+  <div class="dash-card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold text-dark mb-0 d-flex align-items-center">
+        <i class="bi bi-clock-history text-primary me-2"></i>Recent Alert History
+      </h5>
+      <div>
+        <button id="clearLogBtn" onclick="clearLogs()" class="btn btn-outline-danger btn-sm me-2">
+          <i class="bi bi-trash3-fill me-1"></i> Clear History
+        </button>
+        <span class="badge bg-light text-dark border">Live Log Stream</span>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table id="log_table" class="table table-hover align-middle text-center mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="text-muted small text-uppercase">Time</th>
+            <th class="text-muted small text-uppercase">Alert Event</th>
+            <th class="text-muted small text-uppercase">Severity Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if logs %}
+            {% for log in logs %}
+            <tr>
+              <td class="fw-semibold text-dark">{{ log.time }}</td>
+              <td>
+                {% if log.type == 'Drowsiness' %}
+                  <span class="badge bg-danger-subtle text-danger border border-danger px-3 py-2">
+                    <i class="bi bi-exclamation-octagon me-1"></i> Drowsiness Alert
+                  </span>
+                {% elif log.type == 'Yawn' %}
+                  <span class="badge bg-warning-subtle text-dark border border-warning px-3 py-2">
+                    <i class="bi bi-exclamation-triangle me-1"></i> Yawn Alert
+                  </span>
+                {% elif log.type == 'System Started' %}
+                  <span class="badge bg-success-subtle text-success border border-success px-3 py-2">
+                    <i class="bi bi-play-circle me-1"></i> System Started
+                  </span>
+                {% elif log.type == 'System Stopped' %}
+                  <span class="badge bg-secondary-subtle text-secondary border border-secondary px-3 py-2">
+                    <i class="bi bi-stop-circle me-1"></i> System Stopped
+                  </span>
+                {% else %}
+                  <span class="badge bg-secondary-subtle text-secondary px-3 py-2">{{ log.type }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if log.type == 'Drowsiness' %}
+                  <span class="text-danger fw-semibold"><i class="bi bi-arrow-up-right me-1"></i> High Priority</span>
+                {% elif log.type == 'Yawn' %}
+                  <span class="text-warning fw-semibold"><i class="bi bi-dash-lg me-1"></i> Moderate Priority</span>
+                {% elif log.type == 'System Started' %}
+                  <span class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i> System Online</span>
+                {% else %}
+                  <span class="text-muted small">Information</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="3" class="text-muted py-4">No alert incidents recorded yet.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
 
-<!-- Chart Section -->
-<div class="card my-4 shadow-sm border-0">
-  <div class="card-header bg-dark text-white">Alert Statistics</div>
-  <div class="card-body text-center">
-    {% if chart %}
-      <img id="chart" src="data:image/png;base64,{{ chart }}" class="img-fluid rounded shadow" alt="Alert Chart" />
-    {% else %}
-      <p>No data available yet.</p>
-    {% endif %}
-  </div>
-</div>
-
-<!-- Recent Alerts -->
-<div class="card shadow-sm border-0">
-  <div class="card-header bg-dark text-white">Recent Alerts</div>
-  <div class="card-body">
-    <table id="log_table" class="table table-striped table-hover align-middle text-center">
-      <thead class="table-dark">
-        <tr><th>Time</th><th>Type</th></tr>
-      </thead>
-      <tbody>
-        {% for log in logs %}
-        <tr>
-          <td>{{ log.time }}</td>
-          <td>{{ log.type }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- JavaScript for Auto Refresh -->
+<!-- Dynamic Chart.js Script -->
 <script>
-console.log("Dashboard JS loaded successfully!");
+let barChart, pieChart;
+
+function initCharts(drowsyCount, yawnCount) {
+    const ctxBar = document.getElementById('barChart').getContext('2d');
+    const ctxPie = document.getElementById('pieChart').getContext('2d');
+
+    barChart = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: ['Drowsiness Alerts', 'Yawn Alerts'],
+            datasets: [{
+                label: 'Total Counts',
+                data: [drowsyCount, yawnCount],
+                backgroundColor: ['rgba(220, 53, 69, 0.8)', 'rgba(255, 193, 7, 0.8)'],
+                borderColor: ['#dc3545', '#ffc107'],
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+
+    pieChart = new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+            labels: ['Drowsiness', 'Yawning'],
+            datasets: [{
+                data: [drowsyCount, yawnCount],
+                backgroundColor: ['#dc3545', '#ffc107'],
+                borderWidth: 3,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+function clearLogs() {
+    if (confirm("Are you sure you want to clear recent log history?")) {
+        fetch("/clear_logs", { method: "POST" })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    updateDashboard();
+                }
+            })
+            .catch(err => console.error("Error clearing logs:", err));
+    }
+}
 
 function updateDashboard() {
     fetch("/dashboard_data")
@@ -68,21 +268,77 @@ function updateDashboard() {
         .then(data => {
             document.getElementById("drowsy_count").innerText = data.total_drowsy;
             document.getElementById("yawn_count").innerText = data.total_yawn;
-            document.getElementById("chart").src = "data:image/png;base64," + data.chart;
+            document.getElementById("incidents_count").innerText = data.total_incidents;
+            document.getElementById("safety_score").innerText = data.safety_score + "%";
 
+            // Update status indicator
+            const statusContainer = document.getElementById("status_container");
+            if (data.detection_running) {
+                statusContainer.innerHTML = `<span class="badge rounded-pill bg-success-subtle text-success border border-success px-3 py-2 me-3 fs-6">
+                    <span class="pulse-indicator pulse-green"></span> Monitoring Active
+                </span>`;
+            } else {
+                statusContainer.innerHTML = `<span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary px-3 py-2 me-3 fs-6">
+                    <span class="pulse-indicator pulse-red"></span> Detection Idle
+                </span>`;
+            }
+
+            // Update Charts
+            if (barChart && pieChart) {
+                barChart.data.datasets[0].data = [data.total_drowsy, data.total_yawn];
+                barChart.update();
+
+                pieChart.data.datasets[0].data = [data.total_drowsy, data.total_yawn];
+                pieChart.update();
+            }
+
+            // Update Table
             const tbody = document.querySelector("#log_table tbody");
-            tbody.innerHTML = "";
-            data.logs.forEach(log => {
-                const row = `<tr><td>${log.time}</td><td>${log.type}</td></tr>`;
-                tbody.insertAdjacentHTML("beforeend", row);
-            });
+            if (data.logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-muted py-4">No alert incidents recorded yet.</td></tr>';
+            } else {
+                tbody.innerHTML = "";
+                data.logs.forEach(log => {
+                    let badgeHtml = '';
+                    let priorityHtml = '';
+                    if (log.type === 'Drowsiness') {
+                        badgeHtml = `<span class="badge bg-danger-subtle text-danger border border-danger px-3 py-2"><i class="bi bi-exclamation-octagon me-1"></i> Drowsiness Alert</span>`;
+                        priorityHtml = `<span class="text-danger fw-semibold"><i class="bi bi-arrow-up-right me-1"></i> High Priority</span>`;
+                    } else if (log.type === 'Yawn') {
+                        badgeHtml = `<span class="badge bg-warning-subtle text-dark border border-warning px-3 py-2"><i class="bi bi-exclamation-triangle me-1"></i> Yawn Alert</span>`;
+                        priorityHtml = `<span class="text-warning fw-semibold"><i class="bi bi-dash-lg me-1"></i> Moderate Priority</span>`;
+                    } else if (log.type === 'System Started') {
+                        badgeHtml = `<span class="badge bg-success-subtle text-success border border-success px-3 py-2"><i class="bi bi-play-circle me-1"></i> System Started</span>`;
+                        priorityHtml = `<span class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i> System Online</span>`;
+                    } else if (log.type === 'System Stopped') {
+                        badgeHtml = `<span class="badge bg-secondary-subtle text-secondary border border-secondary px-3 py-2"><i class="bi bi-stop-circle me-1"></i> System Stopped</span>`;
+                        priorityHtml = `<span class="text-muted small">System Standby</span>`;
+                    } else {
+                        badgeHtml = `<span class="badge bg-secondary-subtle text-secondary px-3 py-2">${log.type}</span>`;
+                        priorityHtml = `<span class="text-muted small">Standard Event</span>`;
+                    }
+
+                    const row = `<tr>
+                        <td class="fw-semibold text-dark">${log.time}</td>
+                        <td>${badgeHtml}</td>
+                        <td>${priorityHtml}</td>
+                    </tr>`;
+                    tbody.insertAdjacentHTML("beforeend", row);
+                });
+            }
 
             document.getElementById("last_updated").innerText =
-                "Last updated: " + new Date().toLocaleTimeString();
+                "Updated: " + new Date().toLocaleTimeString();
         })
         .catch(err => console.error("Error updating dashboard:", err));
 }
 
-setInterval(updateDashboard, 10000);
+document.addEventListener("DOMContentLoaded", function() {
+    const drowsyVal = parseInt("{{ total_drowsy or 0 }}") || 0;
+    const yawnVal = parseInt("{{ total_yawn or 0 }}") || 0;
+    initCharts(drowsyVal, yawnVal);
+    updateDashboard();
+    setInterval(updateDashboard, 5000);
+});
 </script>
 {% endblock %}

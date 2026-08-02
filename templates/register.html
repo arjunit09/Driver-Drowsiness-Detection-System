@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container py-4 d-flex justify-content-center align-items-center" style="min-height: 82vh;">
+  
+  <div class="dash-card border-0 shadow-lg overflow-hidden w-100" style="max-width: 950px; border-radius: 20px; background: rgba(255, 255, 255, 0.95);">
+    <div class="row g-0">
+      
+      <!-- Left Hero Showcase Panel -->
+      <div class="col-lg-6 p-4 p-md-5 d-flex flex-column justify-content-between text-white position-relative" style="background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);">
+        
+        <div>
+          <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary-subtle text-primary fw-semibold small mb-4 border border-primary-subtle">
+            <i class="bi bi-shield-lock-fill"></i> Secure Driver Onboarding
+          </div>
+
+          <h2 class="fw-bold display-6 mb-3 text-white">
+            Create Driver Safety Account
+          </h2>
+
+          <p class="text-light opacity-75 mb-4">
+            Register your driver profile to start monitoring real-time fatigue metrics, logging alert incidents, and accessing safety performance analytics.
+          </p>
+
+          <!-- Highlights List -->
+          <div class="d-flex flex-column gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon bg-primary-subtle text-primary flex-shrink-0" style="width:40px; height:40px; font-size:1.2rem;">
+                <i class="bi bi-person-check-fill"></i>
+              </div>
+              <span class="small text-light">Instant SQLite User Credentials Setup</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon bg-warning-subtle text-warning flex-shrink-0" style="width:40px; height:40px; font-size:1.2rem;">
+                <i class="bi bi-lock-fill"></i>
+              </div>
+              <span class="small text-light">Werkzeug Encrypted Password Hashing</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon bg-success-subtle text-success flex-shrink-0" style="width:40px; height:40px; font-size:1.2rem;">
+                <i class="bi bi-speedometer2"></i>
+              </div>
+              <span class="small text-light">Direct Navigation to AI Control Console</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Stats Pill -->
+        <div class="pt-3 border-top border-secondary text-secondary small d-flex justify-content-between">
+          <span><i class="bi bi-shield-check text-success me-1"></i> Privacy Protected</span>
+          <span><i class="bi bi-check-all text-info me-1"></i> Instant Access</span>
+        </div>
+
+      </div>
+
+      <!-- Right Form Panel -->
+      <div class="col-lg-6 p-4 p-md-5 d-flex flex-column justify-content-center bg-white">
+        
+        <div class="text-center mb-4">
+          <div class="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-circle mb-3" style="width: 60px; height: 60px; font-size: 1.8rem;">
+            <i class="bi bi-person-plus-fill"></i>
+          </div>
+          <h4 class="fw-bold text-dark mb-1">Driver Registration</h4>
+          <p class="text-muted small">Fill out the details below to create your account</p>
+        </div>
+
+        <form method="post" action="{{ url_for('register') }}">
+          
+          <!-- Username Input -->
+          <div class="mb-3">
+            <label for="username" class="form-label text-dark fw-semibold small">Choose Username</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-0 text-muted"><i class="bi bi-person-fill"></i></span>
+              <input type="text" class="form-control form-control-lg bg-light border-0" id="username" name="username" placeholder="Choose a username" required>
+            </div>
+          </div>
+
+          <!-- Email Input -->
+          <div class="mb-3">
+            <label for="email" class="form-label text-dark fw-semibold small">Email Address</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-0 text-muted"><i class="bi bi-envelope-fill"></i></span>
+              <input type="email" class="form-control form-control-lg bg-light border-0" id="email" name="email" placeholder="name@example.com" required>
+            </div>
+          </div>
+
+          <!-- Password Input -->
+          <div class="mb-3">
+            <label for="password" class="form-label text-dark fw-semibold small">Create Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-0 text-muted"><i class="bi bi-lock-fill"></i></span>
+              <input type="password" class="form-control form-control-lg bg-light border-0" id="password" name="password" placeholder="Create password" required>
+            </div>
+          </div>
+
+          <!-- Confirm Password Input -->
+          <div class="mb-3">
+            <label for="confirm_password" class="form-label text-dark fw-semibold small">Confirm Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-0 text-muted"><i class="bi bi-check2-circle"></i></span>
+              <input type="password" class="form-control form-control-lg bg-light border-0" id="confirm_password" name="confirm_password" placeholder="Confirm password" required>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-warning btn-lg fw-bold shadow-sm d-flex align-items-center justify-content-center">
+              Register Account <i class="bi bi-person-check-fill ms-2 fs-5"></i>
+            </button>
+          </div>
+
+        </form>
+
+        <p class="text-center text-muted mt-4 small mb-0">
+          Already have an account? <a href="{{ url_for('home') }}" class="text-warning fw-bold text-decoration-none">Sign In</a>
+        </p>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

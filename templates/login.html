@@ -1,31 +1,149 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-  <div class="card border-0 shadow-lg p-4" style="max-width: 400px; width: 100%; border-radius: 15px; backdrop-filter: blur(8px); background: rgba(255,255,255,0.15);">
-    
-    <div class="text-center mb-4">
-      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" width="60" class="mb-2">
-      <h4 class="fw-bold text-white">Smart Driver Monitor</h4>
-      <p class="text-light mb-0">Login to your dashboard</p>
+
+<div class="container py-4 d-flex justify-content-center align-items-center" style="min-height: 82vh;">
+  
+  <div class="dash-card border-0 shadow-lg overflow-hidden w-100" style="max-width: 950px; border-radius: 20px; background: rgba(255, 255, 255, 0.95);">
+    <div class="row g-0">
+      
+      <!-- Left Hero Showcase Panel -->
+      <div class="col-lg-6 p-4 p-md-5 d-flex flex-column justify-content-between text-white position-relative" style="background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);">
+        
+        <div>
+          <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary-subtle text-primary fw-semibold small mb-4 border border-primary-subtle">
+            <i class="bi bi-cpu-fill"></i> AI Vision Console v2.4
+          </div>
+
+          <h2 class="fw-bold display-6 mb-3 text-white">
+            Smart Driver Monitoring System
+          </h2>
+
+          <p class="text-light opacity-75 mb-4">
+            Real-time computer vision safety platform analyzing facial metrics to eliminate driver fatigue and prevent accidents.
+          </p>
+
+          <!-- Highlights List -->
+          <div class="d-flex flex-column gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon bg-primary-subtle text-primary flex-shrink-0" style="width:40px; height:40px; font-size:1.2rem;">
+                <i class="bi bi-eye-fill"></i>
+              </div>
+              <span class="small text-light">68-Point Facial Landmark Eye Tracking</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon bg-warning-subtle text-warning flex-shrink-0" style="width:40px; height:40px; font-size:1.2rem;">
+                <i class="bi bi-emoji-frown-fill"></i>
+              </div>
+              <span class="small text-light">Real-Time Yawn & Fatigue Detection</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon bg-danger-subtle text-danger flex-shrink-0" style="width:40px; height:40px; font-size:1.2rem;">
+                <i class="bi bi-bell-fill"></i>
+              </div>
+              <span class="small text-light">Multi-Channel Alarm Siren Warning</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Stats Pill -->
+        <div class="pt-3 border-top border-secondary text-secondary small d-flex justify-content-between">
+          <span><i class="bi bi-shield-check text-success me-1"></i> 98%+ Accuracy</span>
+          <span><i class="bi bi-lightning-charge-fill text-warning me-1"></i> &lt;50ms Response</span>
+        </div>
+
+      </div>
+
+      <!-- Right Form Panel -->
+      <div class="col-lg-6 p-4 p-md-5 d-flex flex-column justify-content-center bg-white">
+        
+        <div class="text-center mb-4">
+          <div class="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-circle mb-3" style="width: 60px; height: 60px; font-size: 1.8rem;">
+            <i class="bi bi-speedometer2"></i>
+          </div>
+          <h4 class="fw-bold text-dark mb-1">Driver Login</h4>
+          <p class="text-muted small">Enter your credentials to access the safety console</p>
+        </div>
+
+        <form method="post" action="{{ url_for('login') }}">
+          
+          <!-- Username Input -->
+          <div class="mb-3">
+            <label for="username" class="form-label text-dark fw-semibold small">Username</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-0 text-muted"><i class="bi bi-person-fill"></i></span>
+              <input type="text" class="form-control form-control-lg bg-light border-0" id="username" name="username" placeholder="Enter username" required>
+            </div>
+          </div>
+
+          <!-- Password Input with Show/Hide Toggle -->
+          <div class="mb-3">
+            <label for="password" class="form-label text-dark fw-semibold small">Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-0 text-muted"><i class="bi bi-lock-fill"></i></span>
+              <input type="password" class="form-control form-control-lg bg-light border-0" id="password" name="password" placeholder="Enter password" required>
+              <button class="btn btn-light border-0 text-muted" type="button" id="togglePassword">
+                <i class="bi bi-eye-fill" id="toggleIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Demo Fill Button -->
+          <div class="mb-3 text-end">
+            <button type="button" id="quickDemoBtn" class="btn btn-link btn-sm text-decoration-none text-warning p-0 fw-semibold">
+              <i class="bi bi-lightning-fill me-1"></i> Quick Fill Demo Admin
+            </button>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-warning btn-lg fw-bold shadow-sm d-flex align-items-center justify-content-center">
+              Sign In To Dashboard <i class="bi bi-arrow-right-circle-fill ms-2 fs-5"></i>
+            </button>
+          </div>
+
+        </form>
+
+        <p class="text-center text-muted mt-4 small mb-0">
+          Don’t have an account? <a href="{{ url_for('register') }}" class="text-warning fw-bold text-decoration-none">Create Account</a>
+        </p>
+
+      </div>
+
     </div>
-
-    <form method="post" action="{{ url_for('login') }}">
-      <div class="mb-3">
-        <label for="username" class="form-label text-light fw-semibold">Username</label>
-        <input type="text" class="form-control form-control-lg bg-light border-0" id="username" name="username" placeholder="Enter username" required>
-      </div>
-      <div class="mb-3">
-        <label for="password" class="form-label text-light fw-semibold">Password</label>
-        <input type="password" class="form-control form-control-lg bg-light border-0" id="password" name="password" placeholder="Enter password" required>
-      </div>
-      <div class="d-grid mt-4">
-        <button type="submit" class="btn btn-warning btn-lg fw-bold shadow-sm">Login</button>
-      </div>
-    </form>
-
-    <p class="text-center text-light mt-3 small mb-0">
-      Don’t have an account? <a href="#" class="text-warning text-decoration-none">Request Access</a>
-    </p>
   </div>
+
 </div>
+
+<!-- Interactive Password Toggle & Demo Auto-Fill Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const passwordInput = document.getElementById("password");
+  const toggleBtn = document.getElementById("togglePassword");
+  const toggleIcon = document.getElementById("toggleIcon");
+  const quickDemoBtn = document.getElementById("quickDemoBtn");
+  const usernameInput = document.getElementById("username");
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", function() {
+      if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        toggleIcon.className = "bi bi-eye-slash-fill";
+      } else {
+        passwordInput.type = "password";
+        toggleIcon.className = "bi bi-eye-fill";
+      }
+    });
+  }
+
+  if (quickDemoBtn) {
+    quickDemoBtn.addEventListener("click", function() {
+      usernameInput.value = "admin";
+      passwordInput.value = "password123";
+    });
+  }
+});
+</script>
+
 {% endblock %}

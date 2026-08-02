@@ -1,94 +1,317 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="container py-3">
 
-<div class="container">
+  <!-- Main Hero Console -->
+  <div class="dash-card p-4 p-md-5 mb-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(240,244,248,0.95));">
+    
+    <div class="row align-items-center">
+      <div class="col-lg-7">
+        
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary-subtle text-primary fw-semibold small mb-3 border border-primary-subtle">
+          <i class="bi bi-cpu-fill"></i> AI Computer Vision Engine v2.4
+        </div>
 
-  <div class="row align-items-center mb-5">
+        <h1 class="fw-bold display-5 text-dark mb-3">
+          Driver Drowsiness Detection System
+        </h1>
 
-    <div class="col-lg-6">
+        <p class="text-secondary lead mb-4">
+          Real-time AI monitoring utilizing 68 2D facial landmarks to calculate Eye Aspect Ratio (EAR) and Mouth Aspect Ratio (MAR) for immediate driver fatigue prevention.
+        </p>
 
-      <h1 class="fw-bold display-5">
-        Driver Drowsiness Detection System
-      </h1>
+        <!-- Primary Action Buttons -->
+        <div class="d-flex flex-wrap align-items-center gap-3">
 
-      <!-- Buttons -->
-      <div class="mt-4">
+          <button id="startBtn" class="btn btn-emerald btn-lg px-4 py-3 fw-bold rounded-3 d-flex align-items-center">
+            <i class="bi bi-play-circle-fill me-2 fs-5"></i> Start Detection
+          </button>
 
-        <button id="startBtn" class="btn btn-success btn-lg me-3">
-          Start Detection
-        </button>
+          <button id="stopBtn" class="btn btn-rose btn-lg px-4 py-3 fw-bold rounded-3 d-flex align-items-center" disabled>
+            <i class="bi bi-stop-circle-fill me-2 fs-5"></i> Stop Detection
+          </button>
 
-        <button id="stopBtn" class="btn btn-danger btn-lg">
-          Stop
-        </button>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-dark btn-lg px-4 py-3 fw-semibold rounded-3 d-flex align-items-center">
+            <i class="bi bi-speedometer2 me-2 fs-5"></i> Open Dashboard
+          </a>
 
-       
-
+        </div>
 
       </div>
 
-      <!-- Runtime -->
-      <div class="mt-4">
-        <h5>
-          Runtime :
-          <span id="timer" class="badge bg-primary fs-6">
-            00:00:00
-          </span>
-        </h5>
+      <!-- Right Side Status Console -->
+      <div class="col-lg-5 mt-4 mt-lg-0">
+        <div class="dash-card p-4 bg-dark text-white border-0 shadow-lg text-center position-relative">
+          
+          <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-secondary">
+            <span class="text-secondary small text-uppercase tracking-wider">System Control Panel</span>
+            <span id="statusBadge" class="badge bg-secondary-subtle text-secondary border border-secondary px-3 py-1">
+              <span class="pulse-indicator pulse-red"></span> Idle
+            </span>
+          </div>
+
+          <p class="text-muted small mb-2 text-uppercase fw-semibold">Active Session Runtime</p>
+
+          <div class="my-3">
+            <span id="timer" class="display-4 fw-bold digital-clock text-warning">
+              00:00:00
+            </span>
+          </div>
+
+          <div class="pt-2 border-top border-secondary text-secondary small d-flex justify-content-between">
+            <span><i class="bi bi-webcam me-1 text-info"></i> Camera Stream: 640x480</span>
+            <span><i class="bi bi-volume-up me-1 text-warning"></i> Alarm Channel: Ready</span>
+          </div>
+
+        </div>
       </div>
 
     </div>
 
   </div>
 
+  </div>
+
+  <!-- Live Video Stream Feed Section -->
+  <div id="videoContainer" class="dash-card p-4 mb-4 text-center" style="display: none;">
+    <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+      <span class="pulse-indicator pulse-green"></span>
+      <h5 class="fw-bold text-dark mb-0">Live AI Driver Monitor Stream</h5>
+    </div>
+    <div class="d-inline-block position-relative rounded overflow-hidden shadow border border-2 border-primary">
+      <img id="videoFeed" src="" class="img-fluid" style="max-width: 640px; width: 100%; height: auto; display: block; background: #000;" alt="Live AI Camera Feed">
+    </div>
+    <p class="text-muted small mt-2 mb-0"><i class="bi bi-info-circle me-1"></i> A desktop OpenCV detection window is also active on your taskbar.</p>
+  </div>
+
+  <!-- Feature Capabilities Grid -->
+  <div class="row g-4">
+    
+    <div class="col-md-6 col-lg-3">
+      <div class="dash-card p-4 h-100">
+        <div class="stat-icon bg-primary-subtle text-primary mb-3">
+          <i class="bi bi-eye-fill"></i>
+        </div>
+        <h5 class="fw-bold text-dark mb-2">EAR Tracking</h5>
+        <p class="text-muted small mb-0">
+          Calculates Eye Aspect Ratio ($\text{EAR} < 0.25$) over 20 consecutive frames to detect microsleeps.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+      <div class="dash-card p-4 h-100">
+        <div class="stat-icon bg-warning-subtle text-warning mb-3">
+          <i class="bi bi-emoji-frown"></i>
+        </div>
+        <h5 class="fw-bold text-dark mb-2">MAR Yawn Alert</h5>
+        <p class="text-muted small mb-0">
+          Measures Mouth Aspect Ratio ($\text{MAR} > 0.15$) over 15 frames to trigger early fatigue warnings.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+      <div class="dash-card p-4 h-100">
+        <div class="stat-icon bg-danger-subtle text-danger mb-3">
+          <i class="bi bi-bell-fill"></i>
+        </div>
+        <h5 class="fw-bold text-dark mb-2">Dual Audio Siren</h5>
+        <p class="text-muted small mb-0">
+          Pygame multi-channel sound mixer triggers distinct siren patterns for eye closure and yawning.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+      <div class="dash-card p-4 h-100">
+        <div class="stat-icon bg-success-subtle text-success mb-3">
+          <i class="bi bi-file-earmark-text-fill"></i>
+        </div>
+        <h5 class="fw-bold text-dark mb-2">Real-Time Audit</h5>
+        <p class="text-muted small mb-0">
+          All detection timestamps are logged to SQLite and audit logs for safety dashboard analysis.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Live Recent Alert Logs Stream -->
+  <div class="dash-card p-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold text-dark mb-0 d-flex align-items-center">
+        <i class="bi bi-clock-history text-primary me-2"></i>Live Session Incident Logs
+      </h5>
+      <div>
+        <button onclick="clearHomeLogs()" class="btn btn-outline-danger btn-sm me-2">
+          <i class="bi bi-trash3-fill me-1"></i> Clear Logs
+        </button>
+        <span class="badge bg-light text-dark border">Auto-Updating</span>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table id="home_log_table" class="table table-hover align-middle text-center mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="text-muted small text-uppercase">Time</th>
+            <th class="text-muted small text-uppercase">Log Event</th>
+            <th class="text-muted small text-uppercase">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="3" class="text-muted py-3">Loading session logs...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
+<!-- Control Script -->
 <script>
+let seconds = 0;
+let timerInterval = null;
 
-let seconds = 0
-let timerInterval = null
+function updateTimer() {
+  seconds++;
+  let hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
+  let mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+  let secs = String(seconds % 60).padStart(2, '0');
 
-function updateTimer(){
-
-  seconds++
-
-  let hrs = String(Math.floor(seconds / 3600)).padStart(2,'0')
-  let mins = String(Math.floor((seconds % 3600) / 60)).padStart(2,'0')
-  let secs = String(seconds % 60).padStart(2,'0')
-
-  document.getElementById("timer").innerText =
-  `${hrs}:${mins}:${secs}`
+  document.getElementById("timer").innerText = `${hrs}:${mins}:${secs}`;
 }
 
+const startBtn = document.getElementById("startBtn");
+const stopBtn = document.getElementById("stopBtn");
+const statusBadge = document.getElementById("statusBadge");
+const videoContainer = document.getElementById("videoContainer");
+const videoFeed = document.getElementById("videoFeed");
 
 // START BUTTON
-document.getElementById("startBtn").addEventListener("click", async function(){
+startBtn.addEventListener("click", async function() {
+  startBtn.disabled = true;
+  startBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Launching...`;
 
-  await fetch("/start_detection")
+  try {
+    await fetch("/start_detection");
+    
+    if (timerInterval === null) {
+      timerInterval = setInterval(updateTimer, 1000);
+    }
 
-  if(timerInterval === null){
-    timerInterval = setInterval(updateTimer,1000)
+    startBtn.disabled = true;
+    startBtn.innerHTML = `<i class="bi bi-check-circle-fill me-2 fs-5"></i> Detection Running`;
+    stopBtn.disabled = false;
+
+    statusBadge.className = "badge bg-success-subtle text-success border border-success px-3 py-1";
+    statusBadge.innerHTML = `<span class="pulse-indicator pulse-green"></span> Active`;
+
+    // Show live video feed in web browser
+    videoContainer.style.display = "block";
+    videoFeed.src = "{{ url_for('video_feed') }}";
+
+  } catch(err) {
+    console.error("Error starting detection:", err);
+    startBtn.disabled = false;
+    startBtn.innerHTML = `<i class="bi bi-play-circle-fill me-2 fs-5"></i> Start Detection`;
   }
-
-})
-
+});
 
 // STOP BUTTON
-document.getElementById("stopBtn").addEventListener("click", async function(){
+stopBtn.addEventListener("click", async function() {
+  stopBtn.disabled = true;
+  stopBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Stopping...`;
 
-  await fetch("/stop_detection")
+  try {
+    await fetch("/stop_detection");
 
-  if(timerInterval !== null){
-    clearInterval(timerInterval)
-    timerInterval = null
+    if (timerInterval !== null) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+
+    seconds = 0;
+    document.getElementById("timer").innerText = "00:00:00";
+
+    startBtn.disabled = false;
+    startBtn.innerHTML = `<i class="bi bi-play-circle-fill me-2 fs-5"></i> Start Detection`;
+    stopBtn.disabled = true;
+    stopBtn.innerHTML = `<i class="bi bi-stop-circle-fill me-2 fs-5"></i> Stop Detection`;
+
+    statusBadge.className = "badge bg-secondary-subtle text-secondary border border-secondary px-3 py-1";
+    statusBadge.innerHTML = `<span class="pulse-indicator pulse-red"></span> Idle`;
+
+    // Hide video feed
+    videoFeed.src = "";
+    videoContainer.style.display = "none";
+
+  } catch(err) {
+    console.error("Error stopping detection:", err);
+    stopBtn.disabled = false;
   }
+});
 
-  seconds = 0
-  document.getElementById("timer").innerText = "00:00:00"
+function fetchHomeLogs() {
+  fetch("/dashboard_data")
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.querySelector("#home_log_table tbody");
+      if (!data.logs || data.logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-muted py-3">No alert incidents recorded yet.</td></tr>';
+      } else {
+        tbody.innerHTML = "";
+        data.logs.slice(0, 8).forEach(log => {
+          let badgeHtml = '';
+          let priorityHtml = '';
+          if (log.type === 'Drowsiness') {
+            badgeHtml = `<span class="badge bg-danger-subtle text-danger border border-danger px-3 py-1"><i class="bi bi-exclamation-octagon me-1"></i> Drowsiness Alert</span>`;
+            priorityHtml = `<span class="text-danger fw-semibold"><i class="bi bi-arrow-up-right me-1"></i> High</span>`;
+          } else if (log.type === 'Yawn') {
+            badgeHtml = `<span class="badge bg-warning-subtle text-dark border border-warning px-3 py-1"><i class="bi bi-exclamation-triangle me-1"></i> Yawn Alert</span>`;
+            priorityHtml = `<span class="text-warning fw-semibold"><i class="bi bi-dash-lg me-1"></i> Moderate</span>`;
+          } else if (log.type === 'System Started') {
+            badgeHtml = `<span class="badge bg-success-subtle text-success border border-success px-3 py-1"><i class="bi bi-play-circle me-1"></i> System Started</span>`;
+            priorityHtml = `<span class="text-success fw-semibold">Online</span>`;
+          } else if (log.type === 'System Stopped') {
+            badgeHtml = `<span class="badge bg-secondary-subtle text-secondary border border-secondary px-3 py-1"><i class="bi bi-stop-circle me-1"></i> System Stopped</span>`;
+            priorityHtml = `<span class="text-muted small">Standby</span>`;
+          } else {
+            badgeHtml = `<span class="badge bg-secondary-subtle text-secondary px-3 py-1">${log.type}</span>`;
+            priorityHtml = `<span class="text-muted small">Info</span>`;
+          }
 
-})
+          const row = `<tr>
+            <td class="fw-semibold text-dark">${log.time}</td>
+            <td>${badgeHtml}</td>
+            <td>${priorityHtml}</td>
+          </tr>`;
+          tbody.insertAdjacentHTML("beforeend", row);
+        });
+      }
+    })
+    .catch(err => console.error("Error loading home logs:", err));
+}
 
+function clearHomeLogs() {
+  if (confirm("Are you sure you want to clear the alert log history?")) {
+    fetch("/clear_logs", { method: "POST" })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          fetchHomeLogs();
+        }
+      });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  fetchHomeLogs();
+  setInterval(fetchHomeLogs, 4000);
+});
 </script>
-
 {% endblock %}

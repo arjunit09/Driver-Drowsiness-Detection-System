@@ -1,5 +1,4 @@
 from scipy.spatial import distance as dist
-from imutils.video import VideoStream
 from imutils import face_utils
 import imutils
 import time
@@ -7,23 +6,82 @@ import dlib
 import cv2
 import pygame
 import control
+import threading
 from datetime import datetime
-vs=None
 import os
+
+vs = None
+output_frame = None
+frame_lock = threading.Lock()
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(CURRENT_DIR, "shape_predictor_68_face_landmarks.dat")
+LOG_PATH = os.path.join(CURRENT_DIR, "alert_log.txt")
+
+
+class DirectShowCameraStream:
+    def __init__(self, src=0):
+        self.cap = cv2.VideoCapture(src, cv2.CAP_DSHOW)
+        if not self.cap.isOpened():
+            self.cap = cv2.VideoCapture(src)
+        self.stopped = False
+        self.frame = None
+        self.lock = threading.Lock()
+
+    def start(self):
+        threading.Thread(target=self.update, daemon=True).start()
+        return self
+
+    def update(self):
+        while not self.stopped:
+            if self.cap.isOpened():
+                grabbed, frame = self.cap.read()
+                if grabbed and frame is not None:
+                    with self.lock:
+                        self.frame = frame
+                else:
+                    time.sleep(0.01)
+            else:
+                time.sleep(0.01)
+
+    def read(self):
+        with self.lock:
+            return self.frame.copy() if self.frame is not None else None
+
+    def stop(self):
+        self.stopped = True
+        if self.cap and self.cap.isOpened():
+            self.cap.release()
+
+
+def generate_frames():
+    global output_frame, frame_lock
+    while True:
+        with frame_lock:
+            if output_frame is None:
+                time.sleep(0.03)
+                continue
+            (flag, encodedImage) = cv2.imencode(".jpg", output_frame)
+            if not flag:
+                time.sleep(0.03)
+                continue
+            frame_bytes = bytearray(encodedImage)
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        time.sleep(0.03)
+
+
 def update_alert(message):
-
-    with open("alert_log.txt", "a") as f:
-
-        now = datetime.now().strftime("%H:%M:%S")
-
-        f.write(f"[{now}] {message}\n")
+    try:
+        with open(LOG_PATH, "a", encoding="utf-8") as f:
+            now = datetime.now().strftime("%H:%M:%S")
+            f.write(f"[{now}] {message}\n")
+    except Exception as e:
+        print(f"Log write exception handled safely: {e}")
 
 
 def start():
-    global vs
+    global vs, output_frame, frame_lock
     update_alert("SYSTEM STARTED")
 
     pygame.mixer.init()
@@ -31,8 +89,11 @@ def start():
     yawn_channel = pygame.mixer.Channel(1)
 
     # Alarm sounds
-    sleep_sound = pygame.mixer.Sound("mixkit-emergency-alert-alarm-1007.wav")
-    yawn_sound = pygame.mixer.Sound("mixkit-alert-alarm-1005.wav")
+    sleep_sound_path = os.path.join(CURRENT_DIR, "mixkit-emergency-alert-alarm-1007.wav")
+    yawn_sound_path = os.path.join(CURRENT_DIR, "mixkit-alert-alarm-1005.wav")
+
+    sleep_sound = pygame.mixer.Sound(sleep_sound_path)
+    yawn_sound = pygame.mixer.Sound(yawn_sound_path)
 
     sleep_sound.set_volume(0.4)
     yawn_sound.set_volume(0.4)
@@ -93,41 +154,40 @@ def start():
     yawn_alarm_on = False
 
     # ==============================
-    # Load Models
+    # Load Models & Camera
     # ==============================
-
-    
-
-    cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 
     print("-> Loading predictor and detector...")
 
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor(MODEL_PATH)
 
-    print("-> Starting Video Stream...")
+    print("-> Starting Video Stream (DirectShow)...")
 
-    vs = VideoStream(src=0, usePiCamera=False).start()
+    vs = DirectShowCameraStream(src=0).start()
     time.sleep(1.0)
 
     print("Detection running:", control.detection_running)
 
+    cv2.namedWindow("Smart Driver Monitor", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("Smart Driver Monitor", 640, 480)
+
     # ==============================
     # Detection Loop
     # ==============================
-    # Display message variables
     alert_message = ""
     alert_start_time = None
     alert_time = 0
+
     while control.detection_running:
-        
 
         frame = vs.read()
-        frame = cv2.flip(frame, 1)
 
         if frame is None:
             time.sleep(0.01)
             continue
+
+        frame = cv2.flip(frame, 1)
 
         frame = imutils.resize(frame, width=640)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -137,6 +197,27 @@ def start():
         gray = clahe.apply(gray)
 
         rects = detector(gray, 1)
+        ear_text = "N/A"
+        mar_text = "N/A"
+
+        if len(rects) == 0:
+            COUNTER = 0
+            YAWN_COUNTER = 0
+
+            if sleep_alarm_on:
+                sleep_channel.stop()
+                sleep_alarm_on = False
+                alert_message = ""
+                alert_time = 0
+                update_alert("NORMAL")
+
+            if yawn_alarm_on:
+                yawn_channel.stop()
+                yawn_alarm_on = False
+                alert_message = ""
+                alert_time = 0
+                update_alert("NORMAL")
+
         for rect in rects:
 
             (x1, y1, x2, y2) = (rect.left(), rect.top(), rect.right(), rect.bottom())
@@ -145,11 +226,10 @@ def start():
             shape = predictor(gray, rect)
             shape = face_utils.shape_to_np(shape)
 
-            # draw landmarks (optional but useful)
-            #for (x, y) in shape:
-                #cv2.circle(frame, (x, y), 2, (0,255,255), -1)
             ear, leftEye, rightEye = final_ear(shape)
             mar = mouth_aspect_ratio(shape)
+            ear_text = f"{ear:.3f}"
+            mar_text = f"{mar:.2f}"
 
             # Draw eyes
             cv2.drawContours(frame, [cv2.convexHull(leftEye)], -1, (0,255,0), 1)
@@ -159,7 +239,7 @@ def start():
             mouth = shape[48:68]
             cv2.drawContours(frame, [cv2.convexHull(mouth)], -1, (255,0,0), 1)
 
-                    # ==============================
+            # ==============================
             # Drowsiness Detection
             # ==============================
 
@@ -226,37 +306,36 @@ def start():
                     alert_time = 0
 
                     update_alert("NORMAL")
-            # Calculate alert duration
-            if alert_start_time is not None:
-                alert_time = time.time() - alert_start_time
-                        # ==============================
-                        # Alert message display
-            if alert_message != "":
-                cv2.putText(frame, alert_message,
-                            (150, 80),
-                            cv2.FONT_HERSHEY_DUPLEX,
-                            1.2,
-                            (0,0,255),
-                            3)
 
-                cv2.putText(frame, f"Alert Time: {alert_time:.1f}s",
-                            (170,120),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.7,
-                            (0,0,255),
-                            2)
-                        # Display
-            # ==============================
+        # Calculate alert duration & render alert text
+        if alert_start_time is not None and alert_message != "":
+            alert_time = time.time() - alert_start_time
+            cv2.putText(frame, alert_message,
+                        (150, 80),
+                        cv2.FONT_HERSHEY_DUPLEX,
+                        1.2,
+                        (0,0,255),
+                        3)
 
-            cv2.putText(frame,"SMART DRIVER MONITOR",(200,30),
-            cv2.FONT_HERSHEY_DUPLEX,0.7,(255,255,255),2)
+            cv2.putText(frame, f"Alert Time: {alert_time:.1f}s",
+                        (170,120),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.7,
+                        (0,0,255),
+                        2)
 
-            cv2.putText(frame,f"EAR: {ear:.3f}",(10,30),
-            cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0),2)
+        # HUD overlay (always visible)
+        cv2.putText(frame,"SMART DRIVER MONITOR",(200,30),
+                    cv2.FONT_HERSHEY_DUPLEX,0.7,(255,255,255),2)
 
-            cv2.putText(frame,f"MAR: {mar:.2f}",(480,30),
-            cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,0,255),2)
+        cv2.putText(frame,f"EAR: {ear_text}",(10,30),
+                    cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,0),2)
 
+        cv2.putText(frame,f"MAR: {mar_text}",(480,30),
+                    cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,0,255),2)
+
+        with frame_lock:
+            output_frame = frame.copy()
 
         cv2.imshow("Smart Driver Monitor", frame)
 
@@ -266,7 +345,6 @@ def start():
             control.detection_running = False
             break
 
-
     # ==============================
     # Cleanup
     # ==============================
@@ -275,25 +353,18 @@ def start():
 
     if vs is not None:
         try:
-            vs.stream.release()
-        except:
-            pass
-
-        try:
             vs.stop()
         except:
             pass
-
         vs = None
 
-    time.sleep(1)
+    with frame_lock:
+        output_frame = None
 
+    time.sleep(0.5)
     cv2.destroyAllWindows()
-
     pygame.mixer.quit()
-
     update_alert("SYSTEM STOPPED")
-
     print("System stopped cleanly.")
 
 

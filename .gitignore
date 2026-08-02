@@ -1,11 +1,21 @@
 __pycache__/
 *.pyc
+*.pyo
 
+# Virtual Environments
 venv/
+.venv/
+env/
+
+# Flask Session & SQLite Database
 flask_session/
+users.db
+*.db
 
-shape_predictor_68_face_landmarks.dat
-
+# Data & Logs
 alert_log.txt
 
+# Environment & IDE
 .env
+.vscode/
+.idea/
