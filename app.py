@@ -188,7 +188,7 @@ def generate_chart():
 # Authentication Middleware (Enforce Login on All URLs)
 # =======================================
 
-EXEMPT_ENDPOINTS = {"home", "login", "register", "static"}
+EXEMPT_ENDPOINTS = {"home", "login", "register", "about", "contact", "static"}
 
 @app.before_request
 def require_login():

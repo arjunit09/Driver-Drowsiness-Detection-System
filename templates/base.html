@@ -62,6 +62,16 @@
         </li>
         {% else %}
         <li class="nav-item mx-2">
+          <a class="nav-link {% if request.endpoint == 'about' %}active{% endif %}" href="{{ url_for('about') }}">
+            <i class="bi bi-info-circle"></i> About
+          </a>
+        </li>
+        <li class="nav-item mx-2">
+          <a class="nav-link {% if request.endpoint == 'contact' %}active{% endif %}" href="{{ url_for('contact') }}">
+            <i class="bi bi-envelope"></i> Contact
+          </a>
+        </li>
+        <li class="nav-item mx-2">
           <a class="nav-link {% if request.endpoint == 'home' %}active{% endif %}" href="{{ url_for('home') }}">
             <i class="bi bi-box-arrow-in-right me-1"></i> Login
           </a>
