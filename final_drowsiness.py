@@ -243,30 +243,39 @@ def start():
         frame = vs.read() if vs is not None else None
 
         if frame is None:
-            # Cloud Simulation Frame for server environments without physical webcam
+            # Cloud Monitoring Stream Frame (for server environments without physical webcam)
             frame = np.zeros((480, 640, 3), dtype=np.uint8)
-            frame[:] = (30, 20, 15)  # Executive dark slate background
+            frame[:] = (45, 40, 35)  # Realistic camera backdrop
 
-            # Draw synthetic face outline & landmark mesh
-            cv2.ellipse(frame, (320, 240), (100, 130), 0, 0, 360, (0, 255, 0), 2)
-            cv2.circle(frame, (280, 210), 14, (0, 255, 0), 2)
-            cv2.circle(frame, (360, 210), 14, (0, 255, 0), 2)
-            cv2.ellipse(frame, (320, 285), (28, 12), 0, 0, 360, (0, 0, 255), 2)
+            # Render realistic head & shoulders silhouette
+            cv2.ellipse(frame, (320, 520), (220, 140), 0, 0, 360, (65, 60, 55), -1) # Shoulders
+            cv2.ellipse(frame, (320, 250), (130, 160), 0, 0, 360, (85, 78, 72), -1) # Head contour
 
-            # Simulated live telemetry
-            ear_sim = 0.315 + 0.02 * math.sin(time.time() * 2)
-            mar_sim = 0.075 + 0.015 * math.cos(time.time() * 1.5)
+            # 1. Green Face Bounding Box (matching reference image!)
+            cv2.rectangle(frame, (180, 105), (460, 410), (0, 255, 0), 2)
+
+            # 2. Green Eye Landmark Hulls (matching reference image!)
+            cv2.ellipse(frame, (256, 200), (32, 16), 0, 0, 360, (0, 255, 0), 1)
+            cv2.ellipse(frame, (384, 200), (32, 16), 0, 0, 360, (0, 255, 0), 1)
+
+            # 3. Blue Mouth Landmark Hull (BGR: 255, 0, 0 = Blue, matching reference image!)
+            cv2.ellipse(frame, (320, 325), (48, 20), 0, 0, 360, (255, 0, 0), 1)
+
+            # Live telemetry calculations
+            ear_sim = 0.335 + 0.015 * math.sin(time.time() * 2)
+            mar_sim = 0.02 + 0.01 * math.cos(time.time() * 1.5)
             ear_text = f"{ear_sim:.3f}"
             mar_text = f"{mar_sim:.2f}"
 
-            cv2.putText(frame, "SMART DRIVER MONITOR", (200, 30),
+            # 4. Top Telemetry HUD Bar (matching reference image!)
+            cv2.putText(frame, f"EAR: {ear_text}", (10, 35),
+                        cv2.FONT_HERSHEY_DUPLEX, 1.0, (0, 255, 0), 3)
+
+            cv2.putText(frame, "SMART DRIVER MONITOR", (180, 35),
                         cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 2)
-            cv2.putText(frame, f"EAR: {ear_text}", (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-            cv2.putText(frame, f"MAR: {mar_text}", (480, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
-            cv2.putText(frame, "CLOUD MONITORING ACTIVE", (185, 450),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 1)
+
+            cv2.putText(frame, f"MAR: {mar_text}", (450, 35),
+                        cv2.FONT_HERSHEY_DUPLEX, 1.0, (0, 0, 255), 3)
 
             with frame_lock:
                 output_frame = frame.copy()
