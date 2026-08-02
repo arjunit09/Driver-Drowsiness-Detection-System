@@ -36,12 +36,25 @@ LOG_PATH = os.path.join(CURRENT_DIR, "alert_log.txt")
 
 class DirectShowCameraStream:
     def __init__(self, src=0):
-        self.cap = cv2.VideoCapture(src, cv2.CAP_DSHOW)
-        if not self.cap.isOpened():
-            self.cap = cv2.VideoCapture(src)
         self.stopped = False
         self.frame = None
         self.lock = threading.Lock()
+        self.cap = None
+
+        try:
+            if os.name == "nt":
+                self.cap = cv2.VideoCapture(src, cv2.CAP_DSHOW)
+            else:
+                self.cap = cv2.VideoCapture(src)
+        except Exception as e:
+            print(f"Primary VideoCapture init exception: {e}")
+
+        if self.cap is None or not self.cap.isOpened():
+            try:
+                self.cap = cv2.VideoCapture(src)
+            except Exception as e:
+                print(f"Fallback VideoCapture init exception: {e}")
+                self.cap = None
 
     def start(self):
         threading.Thread(target=self.update, daemon=True).start()
@@ -228,8 +241,11 @@ def start():
 
     print("Detection running:", control.detection_running)
 
-    cv2.namedWindow("Smart Driver Monitor", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("Smart Driver Monitor", 640, 480)
+    try:
+        cv2.namedWindow("Smart Driver Monitor", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("Smart Driver Monitor", 640, 480)
+    except Exception:
+        pass
 
     # ==============================
     # Detection Loop
