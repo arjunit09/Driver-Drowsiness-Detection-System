@@ -337,13 +337,14 @@ def start():
         with frame_lock:
             output_frame = frame.copy()
 
-        cv2.imshow("Smart Driver Monitor", frame)
-
-        key = cv2.waitKey(1) & 0xFF
-
-        if key == ord("q"):
-            control.detection_running = False
-            break
+        try:
+            cv2.imshow("Smart Driver Monitor", frame)
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord("q"):
+                control.detection_running = False
+                break
+        except Exception:
+            pass
 
     # ==============================
     # Cleanup
@@ -362,8 +363,14 @@ def start():
         output_frame = None
 
     time.sleep(0.5)
-    cv2.destroyAllWindows()
-    pygame.mixer.quit()
+    try:
+        cv2.destroyAllWindows()
+    except Exception:
+        pass
+    try:
+        pygame.mixer.quit()
+    except Exception:
+        pass
     update_alert("SYSTEM STOPPED")
     print("System stopped cleanly.")
 
