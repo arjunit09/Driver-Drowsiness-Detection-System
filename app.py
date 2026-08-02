@@ -24,6 +24,9 @@ DB_PATH = os.path.join(CURRENT_DIR, "users.db")
 # =======================================
 
 app = Flask(__name__)
+app.secret_key = "smart_driver_drowsiness_secret_key_2026_x99"
+app.config["PERMANENT_SESSION_LIFETIME"] = 86400  # 24 hours session duration
+
 SESSION_DIR = os.path.join(CURRENT_DIR, "flask_session")
 os.makedirs(SESSION_DIR, exist_ok=True)
 
@@ -32,7 +35,7 @@ app.config["SESSION_FILE_DIR"] = SESSION_DIR
 try:
     Session(app)
 except Exception as e:
-    print(f"Flask-Session initialization handled: {e}")
+    print(f"Flask-Session filesystem fallback to signed cookies: {e}")
 
 # Detection thread
 detection_thread = None
