@@ -194,49 +194,49 @@ const webcamVideo = document.getElementById("webcamVideo");
 let clientWebcamStream = null;
 
 // START BUTTON
-startBtn.addEventListener("click", async function() {
+startBtn.addEventListener("click", function() {
   startBtn.disabled = true;
   startBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> Launching...`;
 
-  try {
-    await fetch("/start_detection");
-    
-    if (timerInterval === null) {
-      timerInterval = setInterval(updateTimer, 1000);
-    }
-
-    startBtn.disabled = true;
-    startBtn.innerHTML = `<i class="bi bi-check-circle-fill me-2 fs-5"></i> Detection Running`;
-    stopBtn.disabled = false;
-
-    statusBadge.className = "badge bg-success-subtle text-success border border-success px-3 py-1";
-    statusBadge.innerHTML = `<span class="pulse-indicator pulse-green"></span> Active`;
-
-    // Show live video feed container
-    videoContainer.style.display = "block";
-    videoFeed.src = "{{ url_for('video_feed') }}?t=" + new Date().getTime();
-
-    // HTML5 Client Camera Stream Fallback for Cloud Hosting
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
-        .then(function(stream) {
-          clientWebcamStream = stream;
-          webcamVideo.srcObject = stream;
-          webcamVideo.style.display = "block";
-          videoFeed.style.display = "none";
-        })
-        .catch(function(err) {
-          console.log("Using server video stream:", err);
-          webcamVideo.style.display = "none";
-          videoFeed.style.display = "block";
-        });
-    }
-
-  } catch(err) {
-    console.error("Error starting detection:", err);
-    startBtn.disabled = false;
-    startBtn.innerHTML = `<i class="bi bi-play-circle-fill me-2 fs-5"></i> Start Detection`;
+  // 1. Immediately request browser camera permission on user click gesture
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
+      .then(function(stream) {
+        clientWebcamStream = stream;
+        webcamVideo.srcObject = stream;
+        webcamVideo.style.display = "block";
+        videoFeed.style.display = "none";
+      })
+      .catch(function(err) {
+        console.log("Webcam permission denied or unavailable:", err);
+        webcamVideo.style.display = "none";
+        videoFeed.style.display = "block";
+      });
   }
+
+  // 2. Launch backend AI monitoring engine
+  fetch("/start_detection")
+    .then(res => res.json())
+    .then(data => {
+      if (timerInterval === null) {
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      startBtn.disabled = true;
+      startBtn.innerHTML = `<i class="bi bi-check-circle-fill me-2 fs-5"></i> Detection Running`;
+      stopBtn.disabled = false;
+
+      statusBadge.className = "badge bg-success-subtle text-success border border-success px-3 py-1";
+      statusBadge.innerHTML = `<span class="pulse-indicator pulse-green"></span> Active`;
+
+      videoContainer.style.display = "block";
+      videoFeed.src = "{{ url_for('video_feed') }}?t=" + new Date().getTime();
+    })
+    .catch(err => {
+      console.error("Error starting detection backend:", err);
+      startBtn.disabled = false;
+      startBtn.innerHTML = `<i class="bi bi-play-circle-fill me-2 fs-5"></i> Start Detection`;
+    });
 });
 
 // STOP BUTTON
