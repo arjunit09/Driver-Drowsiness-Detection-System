@@ -100,6 +100,19 @@ from datetime import datetime, timezone, timedelta
 IST = timezone(timedelta(hours=5, minutes=30))
 
 
+import urllib.request
+
+def ensure_model_file():
+    if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) < 1000000:
+        print("-> Model file missing. Auto-downloading 68 2D facial landmark model...")
+        url = "https://raw.githubusercontent.com/tzutalin/dlib-android/master/data/shape_predictor_68_face_landmarks.dat"
+        try:
+            urllib.request.urlretrieve(url, MODEL_PATH)
+            print("-> 68 facial landmark model downloaded successfully!")
+        except Exception as e:
+            print(f"Model download exception: {e}")
+
+
 def update_alert(message):
     try:
         with open(LOG_PATH, "a", encoding="utf-8") as f:
@@ -195,10 +208,18 @@ def start():
     # Load Models & Camera
     # ==============================
 
-    print("-> Loading predictor and detector...")
+    print("-> Loading 68 2D facial landmark predictor and detector...")
+    ensure_model_file()
 
-    detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor(MODEL_PATH)
+    detector = None
+    predictor = None
+
+    if DLIB_AVAILABLE and dlib and os.path.exists(MODEL_PATH):
+        try:
+            detector = dlib.get_frontal_face_detector()
+            predictor = dlib.shape_predictor(MODEL_PATH)
+        except Exception as e:
+            print(f"Dlib landmark predictor initialization exception: {e}")
 
     print("-> Starting Video Stream (DirectShow)...")
 
