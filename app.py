@@ -58,8 +58,8 @@ def init_db():
     ''')
     conn.commit()
 
-    # Seed default admin user if empty
-    cursor.execute('SELECT COUNT(*) FROM users')
+    # Ensure default admin user always exists
+    cursor.execute('SELECT COUNT(*) FROM users WHERE LOWER(username) = ?', ("admin",))
     if cursor.fetchone()[0] == 0:
         default_hash = generate_password_hash("password123")
         cursor.execute(
@@ -75,7 +75,7 @@ def get_user_by_username(username):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+    cursor.execute('SELECT * FROM users WHERE LOWER(username) = LOWER(?)', (username.strip(),))
     user = cursor.fetchone()
     conn.close()
     return user
