@@ -1,38 +1,38 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-3">
+<div class="container py-2">
 
   <!-- Main Hero Console -->
-  <div class="dash-card p-4 p-md-5 mb-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(240,244,248,0.95));">
+  <div class="dash-card p-3 p-md-4 mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(240,244,248,0.95));">
     
     <div class="row align-items-center">
       <div class="col-lg-7">
         
-        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary-subtle text-primary fw-semibold small mb-3 border border-primary-subtle">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary-subtle text-primary fw-semibold small mb-2 border border-primary-subtle">
           <i class="bi bi-cpu-fill"></i> AI Computer Vision Engine v2.4
         </div>
 
-        <h1 class="fw-bold display-5 text-dark mb-3">
+        <h1 class="fw-bold fs-3 text-dark mb-2">
           Driver Drowsiness Detection System
         </h1>
 
-        <p class="text-secondary lead mb-4">
+        <p class="text-secondary small mb-3">
           Real-time AI monitoring utilizing 68 2D facial landmarks to calculate Eye Aspect Ratio (EAR) and Mouth Aspect Ratio (MAR) for immediate driver fatigue prevention.
         </p>
 
         <!-- Primary Action Buttons -->
-        <div class="d-flex flex-wrap align-items-center gap-3">
+        <div class="d-flex flex-wrap align-items-center gap-2">
 
-          <button id="startBtn" class="btn btn-emerald btn-lg px-4 py-3 fw-bold rounded-3 d-flex align-items-center">
+          <button id="startBtn" class="btn btn-emerald px-3 py-2 fw-bold rounded-3 d-flex align-items-center">
             <i class="bi bi-play-circle-fill me-2 fs-5"></i> Start Detection
           </button>
 
-          <button id="stopBtn" class="btn btn-rose btn-lg px-4 py-3 fw-bold rounded-3 d-flex align-items-center" disabled>
+          <button id="stopBtn" class="btn btn-rose px-3 py-2 fw-bold rounded-3 d-flex align-items-center" disabled>
             <i class="bi bi-stop-circle-fill me-2 fs-5"></i> Stop Detection
           </button>
 
-          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-dark btn-lg px-4 py-3 fw-semibold rounded-3 d-flex align-items-center">
+          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-dark px-3 py-2 fw-semibold rounded-3 d-flex align-items-center">
             <i class="bi bi-speedometer2 me-2 fs-5"></i> Open Dashboard
           </a>
 
@@ -41,20 +41,20 @@
       </div>
 
       <!-- Right Side Status Console -->
-      <div class="col-lg-5 mt-4 mt-lg-0">
-        <div class="dash-card p-4 bg-dark text-white border-0 shadow-lg text-center position-relative">
+      <div class="col-lg-5 mt-3 mt-lg-0">
+        <div class="dash-card p-3 bg-dark text-white border-0 shadow-lg text-center position-relative">
           
-          <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-secondary">
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-secondary">
             <span class="text-secondary small text-uppercase tracking-wider">System Control Panel</span>
             <span id="statusBadge" class="badge bg-secondary-subtle text-secondary border border-secondary px-3 py-1">
               <span class="pulse-indicator pulse-red"></span> Idle
             </span>
           </div>
 
-          <p class="text-muted small mb-2 text-uppercase fw-semibold">Active Session Runtime</p>
+          <p class="text-muted small mb-1 text-uppercase fw-semibold">Active Session Runtime</p>
 
-          <div class="my-3">
-            <span id="timer" class="display-4 fw-bold digital-clock text-warning">
+          <div class="my-2">
+            <span id="timer" class="fs-2 fw-bold digital-clock text-warning">
               00:00:00
             </span>
           </div>
@@ -71,16 +71,14 @@
 
   </div>
 
-  </div>
-
   <!-- Live Video Stream Feed Section -->
-  <div id="videoContainer" class="dash-card p-4 mb-4 text-center" style="display: none;">
-    <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+  <div id="videoContainer" class="dash-card p-3 mb-3 text-center" style="display: none;">
+    <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
       <span class="pulse-indicator pulse-green"></span>
-      <h5 class="fw-bold text-dark mb-0">Live AI Driver Monitor Stream</h5>
+      <h6 class="fw-bold text-dark mb-0">Live AI Driver Monitor Stream</h6>
     </div>
-    <div class="d-inline-block position-relative rounded overflow-hidden shadow border border-2 border-primary">
-      <img id="videoFeed" src="" class="img-fluid" style="max-width: 640px; width: 100%; height: auto; display: block; background: #000;" alt="Live AI Camera Feed">
+    <div class="d-inline-block position-relative rounded overflow-hidden shadow border border-2 border-primary" style="max-width: 520px; width: 100%;">
+      <img id="videoFeed" src="" class="img-fluid" style="width: 100%; max-height: 320px; object-fit: contain; display: block; background: #0b1120;" alt="Live AI Camera Feed">
     </div>
     <p class="text-muted small mt-2 mb-0"><i class="bi bi-info-circle me-1"></i> A desktop OpenCV detection window is also active on your taskbar.</p>
   </div>
@@ -213,7 +211,7 @@ startBtn.addEventListener("click", async function() {
 
     // Show live video feed in web browser
     videoContainer.style.display = "block";
-    videoFeed.src = "{{ url_for('video_feed') }}";
+    videoFeed.src = "{{ url_for('video_feed') }}?t=" + new Date().getTime();
 
   } catch(err) {
     console.error("Error starting detection:", err);

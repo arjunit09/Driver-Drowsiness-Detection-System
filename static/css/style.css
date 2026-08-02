@@ -204,3 +204,23 @@ p{
     font-weight: 700;
     letter-spacing: 2px;
 }
+
+/* ===== Compact 100% Viewport Fit Utilities ===== */
+body {
+    font-size: 0.92rem;
+}
+
+h1, .display-4, .display-5 {
+    letter-spacing: -0.5px;
+}
+
+.stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 1.25rem;
+}
+
+.dash-card {
+    border-radius: 14px;
+}
