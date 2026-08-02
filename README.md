@@ -1,35 +1,28 @@
-# 🚗 Driver Drowsiness Detection System
+# 🚗 Smart Driver Drowsiness Detection System
 
-A real-time AI-powered Driver Drowsiness Detection System developed using **Python, OpenCV, dlib, Flask, and Pygame**. The system continuously monitors a driver's face through a webcam, detects eye closure and yawning, and triggers an alarm to help prevent accidents caused by drowsiness.
-
----
-
-## 📌 Features
-
-- 👁️ Real-time eye blink detection
-- 😴 Drowsiness detection using Eye Aspect Ratio (EAR)
-- 🥱 Yawning detection
-- 🔔 Audio alarm when drowsiness is detected
-- 🌐 Flask-based web dashboard
-- 📊 Alert logging
-- 🎥 Live webcam monitoring
-- ⚡ Fast and lightweight
+A real-time AI-powered Driver Drowsiness & Yawn Detection System developed using **Python, OpenCV, dlib, Flask, Chart.js, SQLite, and Pygame**. The system continuously monitors a driver's face via webcam feed, calculates real-time Eye Aspect Ratio ($\text{EAR} < 0.25$) and Mouth Aspect Ratio ($\text{MAR} > 0.15$), issues dual audio alarm sirens, and logs incidents to an interactive analytics dashboard.
 
 ---
 
-## 🛠️ Technologies Used
+## 📌 Key Features
 
-- Python
-- OpenCV
-- dlib
-- Flask
-- HTML
-- CSS
-- JavaScript
-- Pygame
-- NumPy
-- SciPy
-- imutils
+- 🔒 **Dynamic SQLite Authentication**: Secure registration & login system with Werkzeug password hashing.
+- 👁️ **68-Point Real-Time Facial Landmark Tracking**: Precise sub-second eye closure detection using `dlib`.
+- 😴 **Automated Drowsiness & Microsleep Alarm**: Triggers a multi-channel emergency alarm siren when eyes remain closed.
+- 🥱 **Yawn & Fatigue Monitoring**: Detects sustained yawning aperture ($\text{MAR} > 0.15$).
+- 📊 **Interactive Chart.js Analytics Dashboard**: Real-time distribution bar & doughnut frequency charts, 4 stat cards, and safety rating scores %.
+- 🎥 **Live Web Stream & HUD Console**: Embedded in-browser video stream alongside desktop OpenCV window.
+- 📜 **Audit Ledger & Live Incident Feed**: Real-time event logging with single-click log history clearing.
+- ⚡ **DirectShow Camera Backend**: Optimized Windows webcam stream buffer (`cv2.CAP_DSHOW`).
+
+---
+
+## 🛠️ Technology Stack
+
+- **Computer Vision & AI**: Python 3.10, OpenCV, dlib 68-landmark shape predictor, imutils, SciPy, NumPy.
+- **Backend & Database**: Flask 3.x, Flask-Session, SQLite3, Werkzeug Security.
+- **Frontend & Visualizations**: Chart.js, Bootstrap 5.3, Bootstrap Icons, Glassmorphism CSS.
+- **Audio & Multithreading**: Pygame Sound Mixer, Python `threading` module.
 
 ---
 
@@ -39,113 +32,102 @@ A real-time AI-powered Driver Drowsiness Detection System developed using **Pyth
 Driver-Drowsiness-Detection-System/
 │
 ├── static/
+│   ├── css/
+│   │   └── style.css
+│   └── images/
+│       └── logo.png
 ├── templates/
-├── sounds/
-├── app.py
-├── control.py
-├── final_drowsiness.py
-├── drowsiness_yawn.py
-├── eye_yawn.py
-├── requirements.txt
-├── README.md
-└── warning.png
+│   ├── base.html
+│   ├── index.html          # Executive Home Control Console
+│   ├── dashboard.html      # Interactive Chart.js Safety Dashboard
+│   ├── about.html          # System Architecture & Performance Metrics
+│   ├── contact.html        # Project Support & Inquiries
+│   ├── login.html          # Dual-Panel Login Page
+│   └── register.html       # Driver Onboarding Registration Page
+├── Screenshots/
+│   ├── 01_login_page.png
+│   ├── 02_register_page.png
+│   ├── 03_home_control_console.png
+│   ├── 04_camera_live_monitoring.png
+│   ├── 05_dashboard_analytics.png
+│   ├── 06_about_page.png
+│   └── 07_contact_page.png
+├── app.py                  # Flask Application Server & Auth Middleware
+├── final_drowsiness.py     # OpenCV & dlib Computer Vision Engine
+├── control.py              # Shared Detection State Flag
+├── users.db                # SQLite Driver Credentials Database (Auto-Created)
+├── alert_log.txt           # Incident Event Audit Log
+├── requirements.txt        # Python Dependencies
+└── README.md               # Project Documentation
 ```
 
 ---
 
-## ⚙️ Installation
+## ⚙️ Installation & Usage
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Driver-Drowsiness-Detection-System.git
-```
-
-### 2. Go to the project folder
-
-```bash
+git clone https://github.com/arjunit09/Driver-Drowsiness-Detection-System.git
 cd Driver-Drowsiness-Detection-System
 ```
 
-### 3. Create a virtual environment (Optional)
+### 2. Create and Activate Virtual Environment (Optional)
 
 ```bash
+# Windows
 python -m venv venv
-```
-
-### 4. Activate it
-
-Windows
-
-```bash
 venv\Scripts\activate
-```
 
-Linux / Mac
-
-```bash
+# Linux / macOS
+python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 5. Install dependencies
+### 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 6. Download the dlib model
+### 4. Facial Landmark Model Setup
 
-Download:
+Ensure `shape_predictor_68_face_landmarks.dat` is placed in the project root directory.
 
-shape_predictor_68_face_landmarks.dat
-
-Place it inside the project folder.
-
-### 7. Run the application
+### 5. Launch Application Server
 
 ```bash
 python app.py
 ```
 
----
-
-## 📸 Screenshots
-
-### Home Page
-
-(Add Screenshot Here)
-
-### Dashboard
-
-(Add Screenshot Here)
-
-### Detection Window
-
-(Add Screenshot Here)
+Open your browser and navigate to: **http://127.0.0.1:5000**
 
 ---
 
-## 🚀 Future Improvements
+## 📸 System Screenshots
 
-- Face recognition
-- Driver identity management
-- Email/SMS alerts
-- Cloud database integration
-- Mobile application
-- Deep learning based drowsiness detection
+### 🔒 Login & Authentication Console
+![Login Page](Screenshots/01_login_page.png)
+
+### 🏎️ Executive Home Control Console & Live Camera Stream
+![Home Console](Screenshots/04_camera_live_monitoring.png)
+
+### 📊 Interactive Chart.js Safety Dashboard
+![Dashboard](Screenshots/05_dashboard_analytics.png)
+
+### ℹ️ System Architecture & Technology Showcase
+![About Page](Screenshots/06_about_page.png)
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Maintainer
 
-**Arjun**
-
-B.Tech Information Technology Student
-
-GitHub: https://github.com/YOUR_USERNAME
+**Arjun**  
+B.Tech Information Technology Student  
+GitHub: [https://github.com/arjunit09](https://github.com/arjunit09)
 
 ---
 
 ## 📄 License
 
-This project is developed for educational purposes.
+This project is developed for educational and safety research purposes.
