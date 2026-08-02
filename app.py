@@ -24,10 +24,15 @@ DB_PATH = os.path.join(CURRENT_DIR, "users.db")
 # =======================================
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key"
+SESSION_DIR = os.path.join(CURRENT_DIR, "flask_session")
+os.makedirs(SESSION_DIR, exist_ok=True)
 
 app.config["SESSION_TYPE"] = "filesystem"
-Session(app)
+app.config["SESSION_FILE_DIR"] = SESSION_DIR
+try:
+    Session(app)
+except Exception as e:
+    print(f"Flask-Session initialization handled: {e}")
 
 # Detection thread
 detection_thread = None
@@ -213,93 +218,105 @@ def home():
 
 @app.route("/login", methods=["POST"])
 def login():
+    try:
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
 
-    username = request.form.get("username", "").strip()
-    password = request.form.get("password", "")
+        user = get_user_by_username(username)
 
-    user = get_user_by_username(username)
-
-    if user and check_password_hash(user["password"], password):
-
-        session["user"] = user["username"]
-        flash(f"Login successful! Welcome back, {user['username']}.", "success")
-
-        return redirect(url_for("index"))
-
-    else:
-
-        flash("Invalid username or password.", "danger")
+        if user and check_password_hash(user["password"], password):
+            session["user"] = user["username"]
+            flash(f"Login successful! Welcome back, {user['username']}.", "success")
+            return redirect(url_for("index"))
+        else:
+            flash("Invalid username or password.", "danger")
+            return redirect(url_for("home"))
+    except Exception as e:
+        print(f"Login exception handled: {e}", flush=True)
+        flash("Login error occurred. Please try again.", "danger")
         return redirect(url_for("home"))
 
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    try:
+        if request.method == "POST":
+            username = request.form.get("username", "").strip()
+            email = request.form.get("email", "").strip()
+            password = request.form.get("password", "")
+            confirm_password = request.form.get("confirm_password", "")
 
-    if request.method == "POST":
+            if not username or not password:
+                flash("Username and password are required.", "warning")
+                return render_template("register.html")
 
-        username = request.form.get("username", "").strip()
-        email = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
-        confirm_password = request.form.get("confirm_password", "")
+            if password != confirm_password:
+                flash("Passwords do not match.", "warning")
+                return render_template("register.html")
 
-        if not username or not password:
-            flash("Username and password are required.", "warning")
-            return render_template("register.html")
+            if get_user_by_username(username):
+                flash("Username already taken. Please choose another.", "danger")
+                return render_template("register.html")
 
-        if password != confirm_password:
-            flash("Passwords do not match.", "warning")
-            return render_template("register.html")
+            if create_user(username, email, password):
+                flash("Account registered successfully! Please log in with your credentials.", "success")
+                return redirect(url_for("home"))
+            else:
+                flash("Registration failed. Please try again.", "danger")
+                return render_template("register.html")
 
-        if get_user_by_username(username):
-            flash("Username already taken. Please choose another.", "danger")
-            return render_template("register.html")
-
-        if create_user(username, email, password):
-            flash("Account registered successfully! Please log in with your credentials.", "success")
-            return redirect(url_for("home"))
-        else:
-            flash("Registration failed. Please try again.", "danger")
-            return render_template("register.html")
-
-    return render_template("register.html")
+        return render_template("register.html")
+    except Exception as e:
+        print(f"Register exception handled: {e}", flush=True)
+        flash("Registration error occurred. Please try again.", "danger")
+        return render_template("register.html")
 
 
 @app.route("/logout")
 def logout():
-
     session.clear()
-
     flash("Logged out successfully.", "info")
-
     return redirect(url_for("home"))
 
 
 @app.route("/dashboard")
 def dashboard():
-
     if "user" not in session:
         return redirect(url_for("home"))
 
-    df = read_alert_log()
+    try:
+        df = read_alert_log()
 
-    total_drowsy = df[df["type"] == "Drowsiness"].shape[0] if not df.empty else 0
-    total_yawn = df[df["type"] == "Yawn"].shape[0] if not df.empty else 0
-    total_incidents = total_drowsy + total_yawn
-    safety_score = max(0, 100 - (total_drowsy * 8 + total_yawn * 4))
+        total_drowsy = df[df["type"] == "Drowsiness"].shape[0] if not df.empty else 0
+        total_yawn = df[df["type"] == "Yawn"].shape[0] if not df.empty else 0
+        total_incidents = total_drowsy + total_yawn
+        safety_score = max(0, 100 - (total_drowsy * 8 + total_yawn * 4))
 
-    latest_logs = df.tail(15).to_dict(orient="records") if not df.empty else []
-    latest_logs.reverse()
+        latest_logs = df.tail(15).to_dict(orient="records") if not df.empty else []
+        latest_logs.reverse()
 
-    return render_template(
-        "dashboard.html",
-        username=session["user"],
-        total_drowsy=total_drowsy,
-        total_yawn=total_yawn,
-        total_incidents=total_incidents,
-        safety_score=safety_score,
-        detection_running=control.detection_running,
-        logs=latest_logs
-    )
+        return render_template(
+            "dashboard.html",
+            username=session.get("user", "Driver"),
+            total_drowsy=total_drowsy,
+            total_yawn=total_yawn,
+            total_incidents=total_incidents,
+            safety_score=safety_score,
+            detection_running=control.detection_running,
+            logs=latest_logs
+        )
+    except Exception as e:
+        print(f"Dashboard exception handled: {e}", flush=True)
+        return render_template(
+            "dashboard.html",
+            username=session.get("user", "Driver"),
+            total_drowsy=0,
+            total_yawn=0,
+            total_incidents=0,
+            safety_score=100,
+            detection_running=False,
+            logs=[]
+        )
 
 
 @app.route("/about")
