@@ -2,6 +2,9 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Models & Large Binary Model Weights (>99MB)
+shape_predictor_68_face_landmarks.dat
+
 # Virtual Environments
 venv/
 .venv/
