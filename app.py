@@ -58,13 +58,22 @@ def init_db():
     ''')
     conn.commit()
 
-    # Ensure default admin user always exists
+    # Ensure default admin and driver users always exist
     cursor.execute('SELECT COUNT(*) FROM users WHERE LOWER(username) = ?', ("admin",))
     if cursor.fetchone()[0] == 0:
         default_hash = generate_password_hash("password123")
         cursor.execute(
             'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
             ("admin", "admin@example.com", default_hash)
+        )
+        conn.commit()
+
+    cursor.execute('SELECT COUNT(*) FROM users WHERE LOWER(username) = ?', ("driver",))
+    if cursor.fetchone()[0] == 0:
+        driver_hash = generate_password_hash("driver123")
+        cursor.execute(
+            'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+            ("driver", "driver@example.com", driver_hash)
         )
         conn.commit()
     conn.close()
