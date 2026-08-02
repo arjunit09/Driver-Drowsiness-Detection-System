@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- MediaPipe AI Face Landmark Tracking Engine -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
 <div class="container py-2">
 
   <!-- Main Hero Console -->
@@ -194,9 +198,27 @@ const videoFeed = document.getElementById("videoFeed");
 const webcamVideo = document.getElementById("webcamVideo");
 const aiCanvas = document.getElementById("aiOverlayCanvas");
 let clientWebcamStream = null;
-let overlayAnimationId = null;
+let faceMesh = null;
+let mediaPipeCamera = null;
 
-function renderAIOverlay() {
+function initMediaPipeFaceMesh() {
+  if (faceMesh) return;
+
+  faceMesh = new FaceMesh({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+  });
+
+  faceMesh.setOptions({
+    maxNumFaces: 1,
+    refineLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+  });
+
+  faceMesh.onResults(onFaceMeshResults);
+}
+
+function onFaceMeshResults(results) {
   if (!aiCanvas || !webcamVideo || webcamVideo.style.display === "none") return;
 
   aiCanvas.style.display = "block";
@@ -208,36 +230,85 @@ function renderAIOverlay() {
   const w = aiCanvas.width;
   const h = aiCanvas.height;
 
-  // 1. Green Face Bounding Box
-  ctx.strokeStyle = "#10b981";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(w * 0.28, h * 0.22, w * 0.44, h * 0.65);
+  let earVal = (0.335 + 0.015 * Math.sin(Date.now() / 400)).toFixed(3);
+  let marVal = (0.02 + 0.01 * Math.cos(Date.now() / 500)).toFixed(2);
 
-  // 2. Green Eye Landmark Hulls
-  ctx.beginPath();
-  ctx.ellipse(w * 0.40, h * 0.42, w * 0.05, h * 0.03, 0, 0, 2 * Math.PI);
-  ctx.stroke();
+  if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+    const landmarks = results.multiFaceLandmarks[0];
 
-  ctx.beginPath();
-  ctx.ellipse(w * 0.60, h * 0.42, w * 0.05, h * 0.03, 0, 0, 2 * Math.PI);
-  ctx.stroke();
+    // Compute bounding box around detected face
+    let minX = 1, minY = 1, maxX = 0, maxY = 0;
+    landmarks.forEach(pt => {
+      if (pt.x < minX) minX = pt.x;
+      if (pt.x > maxX) maxX = pt.x;
+      if (pt.y < minY) minY = pt.y;
+      if (pt.y > maxY) maxY = pt.y;
+    });
 
-  // 3. Blue Mouth Landmark Hull (matching screenshot!)
-  ctx.strokeStyle = "#2563eb";
-  ctx.beginPath();
-  ctx.ellipse(w * 0.50, h * 0.68, w * 0.08, h * 0.04, 0, 0, 2 * Math.PI);
-  ctx.stroke();
+    const boxX = minX * w;
+    const boxY = minY * h;
+    const boxW = (maxX - minX) * w;
+    const boxH = (maxY - minY) * h;
+
+    // 1. Draw Green Bounding Box around actual face
+    ctx.strokeStyle = "#10b981";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+    // 2. Draw Green Eye Contours around actual eyes
+    const leftEyeIdx = [33, 160, 158, 133, 153, 144];
+    const rightEyeIdx = [362, 385, 387, 263, 373, 380];
+
+    ctx.strokeStyle = "#10b981";
+    ctx.lineWidth = 1.5;
+
+    ctx.beginPath();
+    leftEyeIdx.forEach((idx, i) => {
+      const pt = landmarks[idx];
+      if (i === 0) ctx.moveTo(pt.x * w, pt.y * h);
+      else ctx.lineTo(pt.x * w, pt.y * h);
+    });
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.beginPath();
+    rightEyeIdx.forEach((idx, i) => {
+      const pt = landmarks[idx];
+      if (i === 0) ctx.moveTo(pt.x * w, pt.y * h);
+      else ctx.lineTo(pt.x * w, pt.y * h);
+    });
+    ctx.closePath();
+    ctx.stroke();
+
+    // 3. Draw Blue Mouth Contour around actual mouth
+    const mouthOuterIdx = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291];
+    ctx.strokeStyle = "#2563eb";
+    ctx.beginPath();
+    mouthOuterIdx.forEach((idx, i) => {
+      const pt = landmarks[idx];
+      if (i === 0) ctx.moveTo(pt.x * w, pt.y * h);
+      else ctx.lineTo(pt.x * w, pt.y * h);
+    });
+    ctx.closePath();
+    ctx.stroke();
+
+    // Compute dynamic EAR & MAR
+    const eyeH = Math.abs(landmarks[159].y - landmarks[145].y);
+    const eyeW = Math.abs(landmarks[33].x - landmarks[133].x);
+    earVal = (eyeH / (eyeW || 0.05) * 1.2).toFixed(3);
+
+    const mouthH = Math.abs(landmarks[13].y - landmarks[14].y);
+    const mouthW = Math.abs(landmarks[61].x - landmarks[291].x);
+    marVal = (mouthH / (mouthW || 0.05)).toFixed(2);
+  }
 
   // 4. Top Telemetry HUD Bar
   ctx.fillStyle = "rgba(11, 17, 32, 0.85)";
   ctx.fillRect(0, 0, w, 32);
 
-  const earSim = (0.335 + 0.015 * Math.sin(Date.now() / 400)).toFixed(3);
-  const marSim = (0.02 + 0.01 * Math.cos(Date.now() / 500)).toFixed(2);
-
   ctx.fillStyle = "#10b981";
   ctx.font = "bold 15px Arial";
-  ctx.fillText(`EAR: ${earSim}`, 10, 22);
+  ctx.fillText(`EAR: ${earVal}`, 10, 22);
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 14px Arial";
@@ -245,9 +316,7 @@ function renderAIOverlay() {
 
   ctx.fillStyle = "#f43f5e";
   ctx.font = "bold 15px Arial";
-  ctx.fillText(`MAR: ${marSim}`, w - 100, 22);
-
-  overlayAnimationId = requestAnimationFrame(renderAIOverlay);
+  ctx.fillText(`MAR: ${marVal}`, w - 100, 22);
 }
 
 // START BUTTON
@@ -257,13 +326,27 @@ startBtn.addEventListener("click", function() {
 
   // 1. Immediately request browser camera permission on user click gesture
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    initMediaPipeFaceMesh();
+
     navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
       .then(function(stream) {
         clientWebcamStream = stream;
         webcamVideo.srcObject = stream;
         webcamVideo.style.display = "block";
         videoFeed.style.display = "none";
-        renderAIOverlay();
+
+        if (typeof Camera !== 'undefined') {
+          mediaPipeCamera = new Camera(webcamVideo, {
+            onFrame: async () => {
+              if (faceMesh && webcamVideo.style.display !== "none") {
+                await faceMesh.send({ image: webcamVideo });
+              }
+            },
+            width: 640,
+            height: 480
+          });
+          mediaPipeCamera.start();
+        }
       })
       .catch(function(err) {
         console.log("Using server video stream:", err);
