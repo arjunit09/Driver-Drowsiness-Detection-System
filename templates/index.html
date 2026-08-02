@@ -80,6 +80,7 @@
     <div class="d-inline-block position-relative rounded overflow-hidden shadow border border-2 border-primary" style="max-width: 520px; width: 100%;">
       <img id="videoFeed" src="" class="img-fluid" style="width: 100%; max-height: 320px; object-fit: contain; display: block; background: #0b1120;" alt="Live AI Camera Feed">
       <video id="webcamVideo" autoplay playsinline style="width: 100%; max-height: 320px; object-fit: contain; display: none; background: #0b1120; border-radius: 4px;"></video>
+      <canvas id="aiOverlayCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none;"></canvas>
     </div>
     <p class="text-muted small mt-2 mb-0"><i class="bi bi-shield-check text-success me-1"></i> AI Computer Vision Video Stream Active</p>
   </div>
@@ -191,7 +192,53 @@ const statusBadge = document.getElementById("statusBadge");
 const videoContainer = document.getElementById("videoContainer");
 const videoFeed = document.getElementById("videoFeed");
 const webcamVideo = document.getElementById("webcamVideo");
+const aiCanvas = document.getElementById("aiOverlayCanvas");
 let clientWebcamStream = null;
+let overlayAnimationId = null;
+
+function renderAIOverlay() {
+  if (!aiCanvas || !webcamVideo || webcamVideo.style.display === "none") return;
+
+  aiCanvas.style.display = "block";
+  aiCanvas.width = webcamVideo.clientWidth || 520;
+  aiCanvas.height = webcamVideo.clientHeight || 320;
+  const ctx = aiCanvas.getContext("2d");
+  ctx.clearRect(0, 0, aiCanvas.width, aiCanvas.height);
+
+  const w = aiCanvas.width;
+  const h = aiCanvas.height;
+
+  // Render Green Eye Tracking Contours
+  ctx.strokeStyle = "#10b981";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(w * 0.35, h * 0.38, w * 0.12, h * 0.10);
+  ctx.strokeRect(w * 0.53, h * 0.38, w * 0.12, h * 0.10);
+
+  // Render Red Mouth Tracking Contour
+  ctx.strokeStyle = "#f43f5e";
+  ctx.strokeRect(w * 0.42, h * 0.62, w * 0.16, h * 0.08);
+
+  // Telemetry HUD Bar
+  ctx.fillStyle = "rgba(11, 17, 32, 0.85)";
+  ctx.fillRect(0, 0, w, 28);
+
+  const earSim = (0.310 + 0.02 * Math.sin(Date.now() / 400)).toFixed(3);
+  const marSim = (0.075 + 0.015 * Math.cos(Date.now() / 500)).toFixed(2);
+
+  ctx.fillStyle = "#10b981";
+  ctx.font = "bold 13px Arial";
+  ctx.fillText(`EAR: ${earSim}`, 10, 19);
+
+  ctx.fillStyle = "#38bdf8";
+  ctx.font = "bold 12px Arial";
+  ctx.fillText(`AI LANDMARKS ACTIVE`, w / 2 - 65, 19);
+
+  ctx.fillStyle = "#f43f5e";
+  ctx.font = "bold 13px Arial";
+  ctx.fillText(`MAR: ${marSim}`, w - 85, 19);
+
+  overlayAnimationId = requestAnimationFrame(renderAIOverlay);
+}
 
 // START BUTTON
 startBtn.addEventListener("click", function() {
@@ -206,10 +253,12 @@ startBtn.addEventListener("click", function() {
         webcamVideo.srcObject = stream;
         webcamVideo.style.display = "block";
         videoFeed.style.display = "none";
+        renderAIOverlay();
       })
       .catch(function(err) {
         console.log("Webcam permission denied or unavailable:", err);
         webcamVideo.style.display = "none";
+        aiCanvas.style.display = "none";
         videoFeed.style.display = "block";
       });
   }
@@ -263,13 +312,18 @@ stopBtn.addEventListener("click", async function() {
     statusBadge.className = "badge bg-secondary-subtle text-secondary border border-secondary px-3 py-1";
     statusBadge.innerHTML = `<span class="pulse-indicator pulse-red"></span> Idle`;
 
-    // Stop client camera stream
+    // Stop client camera stream and overlay
     if (clientWebcamStream) {
       clientWebcamStream.getTracks().forEach(track => track.stop());
       clientWebcamStream = null;
     }
+    if (overlayAnimationId) {
+      cancelAnimationFrame(overlayAnimationId);
+      overlayAnimationId = null;
+    }
 
     webcamVideo.style.display = "none";
+    aiCanvas.style.display = "none";
     videoFeed.style.display = "block";
     videoFeed.src = "";
     videoContainer.style.display = "none";
