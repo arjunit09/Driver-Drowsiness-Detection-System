@@ -10,10 +10,8 @@ venv/
 .venv/
 env/
 
-# Flask Session & SQLite Database
+# Flask Session Cache
 flask_session/
-users.db
-*.db
 
 # Data & Logs
 alert_log.txt

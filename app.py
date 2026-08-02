@@ -50,24 +50,23 @@ def init_db():
     ''')
     conn.commit()
 
-    # Ensure default admin and driver users always exist
-    cursor.execute('SELECT COUNT(*) FROM users WHERE LOWER(username) = ?', ("admin",))
-    if cursor.fetchone()[0] == 0:
-        default_hash = generate_password_hash("password123")
-        cursor.execute(
-            'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-            ("admin", "admin@example.com", default_hash)
-        )
-        conn.commit()
+    # Ensure default persistent accounts always exist
+    demo_accounts = [
+        ("admin", "admin@example.com", "password123"),
+        ("driver", "driver@example.com", "driver123"),
+        ("user", "user@example.com", "user123"),
+        ("demo", "demo@example.com", "demo123")
+    ]
 
-    cursor.execute('SELECT COUNT(*) FROM users WHERE LOWER(username) = ?', ("driver",))
-    if cursor.fetchone()[0] == 0:
-        driver_hash = generate_password_hash("driver123")
-        cursor.execute(
-            'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-            ("driver", "driver@example.com", driver_hash)
-        )
-        conn.commit()
+    for uname, uemail, upass in demo_accounts:
+        cursor.execute('SELECT COUNT(*) FROM users WHERE LOWER(username) = ?', (uname.lower(),))
+        if cursor.fetchone()[0] == 0:
+            u_hash = generate_password_hash(upass)
+            cursor.execute(
+                'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+                (uname, uemail, u_hash)
+            )
+            conn.commit()
     conn.close()
 
 
