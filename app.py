@@ -24,18 +24,10 @@ DB_PATH = os.path.join(CURRENT_DIR, "users.db")
 # =======================================
 
 app = Flask(__name__)
-app.secret_key = "smart_driver_drowsiness_secret_key_2026_x99"
+app.secret_key = "smart_driver_drowsiness_secret_key_2026_x99_prod"
 app.config["PERMANENT_SESSION_LIFETIME"] = 86400  # 24 hours session duration
-
-SESSION_DIR = os.path.join(CURRENT_DIR, "flask_session")
-os.makedirs(SESSION_DIR, exist_ok=True)
-
-app.config["SESSION_TYPE"] = "filesystem"
-app.config["SESSION_FILE_DIR"] = SESSION_DIR
-try:
-    Session(app)
-except Exception as e:
-    print(f"Flask-Session filesystem fallback to signed cookies: {e}")
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # Detection thread
 detection_thread = None
@@ -237,6 +229,7 @@ def login():
         user = get_user_by_username(username)
 
         if user and check_password_hash(user["password"], password):
+            session.permanent = True
             session["user"] = user["username"]
             flash(f"Login successful! Welcome back, {user['username']}.", "success")
             return redirect(url_for("index"))
