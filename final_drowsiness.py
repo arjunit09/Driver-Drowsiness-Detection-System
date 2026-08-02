@@ -94,10 +94,16 @@ def generate_frames():
         time.sleep(0.04)
 
 
+from datetime import datetime, timezone, timedelta
+
+# IST Timezone (+5:30) for log timestamp synchronization
+IST = timezone(timedelta(hours=5, minutes=30))
+
+
 def update_alert(message):
     try:
         with open(LOG_PATH, "a", encoding="utf-8") as f:
-            now = datetime.now().strftime("%H:%M:%S")
+            now = datetime.now(IST).strftime("%H:%M:%S")
             f.write(f"[{now}] {message}\n")
     except Exception as e:
         print(f"Log write exception handled safely: {e}")

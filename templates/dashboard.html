@@ -270,6 +270,7 @@ function updateDashboard() {
             document.getElementById("yawn_count").innerText = data.total_yawn;
             document.getElementById("incidents_count").innerText = data.total_incidents;
             document.getElementById("safety_score").innerText = data.safety_score + "%";
+            document.getElementById("last_updated").innerText = "Updated: " + new Date().toLocaleTimeString();
 
             // Update status indicator
             const statusContainer = document.getElementById("status_container");
