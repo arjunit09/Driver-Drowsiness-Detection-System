@@ -2,13 +2,25 @@ from scipy.spatial import distance as dist
 from imutils import face_utils
 import imutils
 import time
-import dlib
 import cv2
-import pygame
 import control
 import threading
 from datetime import datetime
 import os
+
+try:
+    import dlib
+    DLIB_AVAILABLE = True
+except Exception:
+    dlib = None
+    DLIB_AVAILABLE = False
+
+try:
+    import pygame
+    PYGAME_AVAILABLE = True
+except Exception:
+    pygame = None
+    PYGAME_AVAILABLE = False
 
 vs = None
 output_frame = None
@@ -84,19 +96,28 @@ def start():
     global vs, output_frame, frame_lock
     update_alert("SYSTEM STARTED")
 
-    pygame.mixer.init()
-    sleep_channel = pygame.mixer.Channel(0)
-    yawn_channel = pygame.mixer.Channel(1)
+    sleep_channel = None
+    yawn_channel = None
+    sleep_sound = None
+    yawn_sound = None
 
-    # Alarm sounds
-    sleep_sound_path = os.path.join(CURRENT_DIR, "mixkit-emergency-alert-alarm-1007.wav")
-    yawn_sound_path = os.path.join(CURRENT_DIR, "mixkit-alert-alarm-1005.wav")
+    if PYGAME_AVAILABLE and pygame:
+        try:
+            pygame.mixer.init()
+            sleep_channel = pygame.mixer.Channel(0)
+            yawn_channel = pygame.mixer.Channel(1)
 
-    sleep_sound = pygame.mixer.Sound(sleep_sound_path)
-    yawn_sound = pygame.mixer.Sound(yawn_sound_path)
+            sleep_sound_path = os.path.join(CURRENT_DIR, "mixkit-emergency-alert-alarm-1007.wav")
+            yawn_sound_path = os.path.join(CURRENT_DIR, "mixkit-alert-alarm-1005.wav")
 
-    sleep_sound.set_volume(0.4)
-    yawn_sound.set_volume(0.4)
+            if os.path.exists(sleep_sound_path):
+                sleep_sound = pygame.mixer.Sound(sleep_sound_path)
+                sleep_sound.set_volume(0.4)
+            if os.path.exists(yawn_sound_path):
+                yawn_sound = pygame.mixer.Sound(yawn_sound_path)
+                yawn_sound.set_volume(0.4)
+        except Exception as e:
+            print(f"Pygame audio mixer initialization skipped: {e}")
 
     # ==============================
     # EAR calculation
@@ -253,7 +274,12 @@ def start():
 
                         print("DROWSINESS DETECTED")
 
-                        sleep_channel.play(sleep_sound, loops=-1)
+                        if sleep_channel and sleep_sound:
+                            try:
+                                sleep_channel.play(sleep_sound, loops=-1)
+                            except Exception:
+                                pass
+
                         sleep_alarm_on = True
 
                         alert_message = "DROWSINESS ALERT!"
@@ -266,7 +292,11 @@ def start():
                 COUNTER = 0
 
                 if sleep_alarm_on:
-                    sleep_channel.stop()
+                    if sleep_channel:
+                        try:
+                            sleep_channel.stop()
+                        except Exception:
+                            pass
                     sleep_alarm_on = False
                     alert_message = ""
                     alert_time = 0
@@ -286,7 +316,11 @@ def start():
 
                         print("YAWN DETECTED")
 
-                        yawn_channel.play(yawn_sound)
+                        if yawn_channel and yawn_sound:
+                            try:
+                                yawn_channel.play(yawn_sound)
+                            except Exception:
+                                pass
 
                         yawn_alarm_on = True
 
@@ -300,7 +334,11 @@ def start():
                 YAWN_COUNTER = 0
 
                 if yawn_alarm_on:
-                    yawn_channel.stop()
+                    if yawn_channel:
+                        try:
+                            yawn_channel.stop()
+                        except Exception:
+                            pass
                     yawn_alarm_on = False
                     alert_message = ""
                     alert_time = 0
